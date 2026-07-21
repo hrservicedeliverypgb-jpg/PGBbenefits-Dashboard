@@ -1281,6 +1281,7 @@ function showPage(id,btn){
   document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
+  if(id==='dashboard' && activeAff) closeAff();
   if(id==='employees'){ initEmp(); resetEmpSearch(); }
   if(id==='manage'){ initManage(); resetMgrSearch(); resetSepSearch(); }
   if(id==='summary') initAnalytics();
@@ -1618,6 +1619,9 @@ function clearSearch(){
 function resetEmpSearch(){
   document.getElementById('empSearch').value='';
   document.getElementById('searchClear').classList.remove('visible');
+  ['empAff','empStatus','empBenF','empLevel'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
   empFilter();
 }
 
@@ -1920,6 +1924,9 @@ function resetMgrSearch() {
   if(!el) return;
   el.value = '';
   document.getElementById('mgrClear').classList.remove('visible');
+  ['mgrAff','mgrBen','mgrYear'].forEach(function(id){
+    var f=document.getElementById(id); if(f) f.value='';
+  });
   mgrFilter();
 }
 function mgrFilter() {
@@ -2390,6 +2397,7 @@ function resetSepSearch() {
   if(!el) return;
   el.value = '';
   document.getElementById('sepClear').classList.remove('visible');
+  var affEl = document.getElementById('sepAff'); if(affEl) affEl.value='';
   sepFilter();
 }
 function sepFilter() {
