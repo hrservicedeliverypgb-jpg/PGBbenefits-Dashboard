@@ -1283,9 +1283,9 @@ function showPage(id,btn){
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
   if(id==='employees'){ initEmp(); resetEmpSearch(); }
-  if(id==='manage') initManage();
+  if(id==='manage'){ initManage(); resetMgrSearch(); }
   if(id==='summary') initAnalytics();
-  if(id==='policy') initPolicy();
+  if(id==='policy'){ initPolicy(); resetPolSearch(); }
 }
 
 /* ===== DASHBOARD ===== */
@@ -1914,6 +1914,13 @@ function mgrClearSearch() {
   document.getElementById('mgrSearch').value = '';
   document.getElementById('mgrClear').classList.remove('visible');
   document.getElementById('mgrSearch').focus();
+  mgrFilter();
+}
+function resetMgrSearch() {
+  var el = document.getElementById('mgrSearch');
+  if(!el) return;
+  el.value = '';
+  document.getElementById('mgrClear').classList.remove('visible');
   mgrFilter();
 }
 function mgrFilter() {
@@ -4239,6 +4246,16 @@ function polClearSearch() {
   document.getElementById('polSearch').value = '';
   polSearchQ = '';
   document.getElementById('polSearchClear').classList.remove('visible');
+  renderPolSidebar();
+}
+
+function resetPolSearch() {
+  var el = document.getElementById('polSearch');
+  if(!el) return;
+  el.value = '';
+  polSearchQ = '';
+  var clearBtn = document.getElementById('polSearchClear');
+  if(clearBtn) clearBtn.classList.remove('visible');
   renderPolSidebar();
 }
 
