@@ -699,10 +699,9 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
       <option value="OJT">OJT</option>
       <option value="APP">Apprentice</option>
     </select>
-    <select class="sel" id="empBenF" onchange="empFilter()">
+    <select class="sel" id="empBenF" onchange="empFilter()" style="display:none">
       <option value="">All employees</option>
       <option value="with">With benefits only</option>
-      <option value="without">Without benefits</option>
     </select>
     <select class="sel" id="empLevel" onchange="empFilter()">
       <option value="">All levels</option>
@@ -1630,6 +1629,7 @@ function empFilter(){
   var lvl=document.getElementById('empLevel').value;
   empFiltered=ALL_EMP.filter(function(e){
     if(e._separated) return false;
+    if(!e.hasBens) return false;
     if(aff && e.affiliate!==aff) return false;
     if(stat && e.status!==stat) return false;
     if(benf==='with' && !e.hasBens) return false;
@@ -1662,12 +1662,9 @@ function empFilter(){
 }
 
 function renderStats(){
-  var wb=empFiltered.filter(function(e){return e.hasBens;}).length;
   var amt=empFiltered.reduce(function(s,e){return s+e.total_ben;},0);
   var s=document.getElementById('statsBar');
-  s.innerHTML='<div class="stat-item">Showing <strong>'+empFiltered.length.toLocaleString()+'</strong> employees</div>'
-    +'<div class="stat-item">With benefits: <strong style="color:var(--gold)">'+wb.toLocaleString()+'</strong></div>'
-    +'<div class="stat-item">Without benefits: <strong>'+(empFiltered.length-wb).toLocaleString()+'</strong></div>'
+  s.innerHTML='<div class="stat-item">Showing <strong>'+empFiltered.length.toLocaleString()+'</strong> employees with benefits</div>'
     +'<div class="stat-item">Benefits total: <strong style="color:var(--green)">'+fmt(amt)+'</strong></div>';
 }
 
