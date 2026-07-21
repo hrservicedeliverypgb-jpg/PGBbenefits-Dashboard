@@ -777,7 +777,7 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
           <th>ID No.</th><th>Employee Name</th><th>Affiliate</th>
           <th>Benefit Type</th><th>Year</th>
           <th class="r">EE Share</th><th class="r">ER Share</th><th class="r">Total</th>
-          <th>Date Approved</th><th>Date Released</th><th>Remarks</th>
+          <th>Date of Request</th><th>Date Approved</th><th>Date Released</th><th>TAT</th><th>Remarks</th>
           <th>Actions</th>
         </tr></thead>
         <tbody id="mgrBody"></tbody>
@@ -1282,7 +1282,7 @@ function showPage(id,btn){
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
   if(id==='employees'){ initEmp(); resetEmpSearch(); }
-  if(id==='manage'){ initManage(); resetMgrSearch(); }
+  if(id==='manage'){ initManage(); resetMgrSearch(); resetSepSearch(); }
   if(id==='summary') initAnalytics();
   if(id==='policy'){ initPolicy(); resetPolSearch(); }
 }
@@ -1874,8 +1874,10 @@ function initManage() {
         ee: b.ee,
         er: b.er,
         tt: b.tt,
+        req: b.req || '',
         da: b.da,
         dr: b.dr,
+        tat: b.tat!=null ? b.tat : tatDaysBetween(b.req||'', b.da),
         rmk: b.rmk,
         _deleted: false
       });
@@ -1978,8 +1980,10 @@ function renderMgrRows() {
       +'<td class="r" style="color:var(--pink)">'+(r.ee>0?fmtFull(r.ee):'&mdash;')+'</td>'
       +'<td class="r" style="color:var(--orange)">'+(r.er>0?fmtFull(r.er):'&mdash;')+'</td>'
       +'<td class="r" style="color:var(--gold);font-weight:700">'+(r.tt>0?fmtFull(r.tt):'&mdash;')+'</td>'
+      +'<td style="color:var(--muted);font-size:11px">'+(r.req||'&mdash;')+'</td>'
       +'<td style="color:var(--muted);font-size:11px">'+(r.da||'&mdash;')+'</td>'
       +'<td style="color:var(--muted);font-size:11px">'+(r.dr||'&mdash;')+'</td>'
+      +'<td style="color:var(--muted);font-size:11px">'+(r.tat!=null?(r.tat+'d'):'&mdash;')+'</td>'
       +'<td class="mgr-trunc" style="color:var(--muted);font-size:11px">'+(r.rmk||'&mdash;')+'</td>'
       +'<td style="white-space:nowrap">'
         +'<button class="mgr-btn mgr-btn-secondary mgr-btn-sm" onclick="openEditModal('+r._idx+')">Edit</button> '
@@ -2379,6 +2383,13 @@ function sepClearSearch() {
   document.getElementById('sepSearch').value = '';
   document.getElementById('sepClear').classList.remove('visible');
   document.getElementById('sepSearch').focus();
+  sepFilter();
+}
+function resetSepSearch() {
+  var el = document.getElementById('sepSearch');
+  if(!el) return;
+  el.value = '';
+  document.getElementById('sepClear').classList.remove('visible');
   sepFilter();
 }
 function sepFilter() {
