@@ -1282,7 +1282,7 @@ function showPage(id,btn){
   document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
-  if(id==='employees') initEmp();
+  if(id==='employees'){ initEmp(); resetEmpSearch(); }
   if(id==='manage') initManage();
   if(id==='summary') initAnalytics();
   if(id==='policy') initPolicy();
@@ -1613,6 +1613,12 @@ function clearSearch(){
   document.getElementById('empSearch').value='';
   document.getElementById('searchClear').classList.remove('visible');
   document.getElementById('empSearch').focus();
+  empFilter();
+}
+
+function resetEmpSearch(){
+  document.getElementById('empSearch').value='';
+  document.getElementById('searchClear').classList.remove('visible');
   empFilter();
 }
 
