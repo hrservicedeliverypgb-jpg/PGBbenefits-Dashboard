@@ -1951,8 +1951,9 @@ function mgrFilter() {
 }
 
 function renderMgrStats() {
-  var totalAmt = mgrFiltered.reduce(function(s,r){return s+r.tt;},0);
-  var totalER = mgrFiltered.reduce(function(s,r){return s+r.er;},0);
+  var activeRecs = mgrFiltered.filter(function(r){return !r._cancelled;});
+  var totalAmt = activeRecs.reduce(function(s,r){return s+r.tt;},0);
+  var totalER = activeRecs.reduce(function(s,r){return s+r.er;},0);
   document.getElementById('mgrStatsBar').innerHTML =
     '<div class="mgr-stat">Showing <strong>'+mgrFiltered.length.toLocaleString()+'</strong> records</div>'
     +'<div class="mgr-stat">Total amount: <strong style="color:var(--gold)">'+fmtFull(totalAmt)+'</strong></div>'
@@ -1967,9 +1968,10 @@ function renderMgrRows() {
     var r = mgrFiltered[i];
     var color = BEN_COLORS[r.ben] || '#888';
     var tr = document.createElement('tr');
+    if(r._cancelled) tr.style.opacity = '.55';
     tr.innerHTML =
       '<td class="mgr-id">'+r.id+'</td>'
-      +'<td class="mgr-name">'+r.nm+'</td>'
+      +'<td class="mgr-name">'+r.nm+(r._cancelled?' <span style="color:var(--red);font-size:10px;font-weight:700">CANCELLED</span>':'')+'</td>'
       +'<td><span class="badge b-aff">'+(r.co||'&mdash;')+'</span></td>'
       +'<td><span class="badge" style="background:'+color+'22;color:'+color+'">'+r.ben+'</span></td>'
       +'<td>'+(r.yr||'&mdash;')+'</td>'
@@ -1981,6 +1983,9 @@ function renderMgrRows() {
       +'<td class="mgr-trunc" style="color:var(--muted);font-size:11px">'+(r.rmk||'&mdash;')+'</td>'
       +'<td style="white-space:nowrap">'
         +'<button class="mgr-btn mgr-btn-secondary mgr-btn-sm" onclick="openEditModal('+r._idx+')">Edit</button> '
+        +(r._cancelled
+          ? ''
+          : '<button class="mgr-btn mgr-btn-secondary mgr-btn-sm" onclick="cancelAlloc('+r._idx+')">Cancel</button> ')
         +'<button class="mgr-btn mgr-btn-danger mgr-btn-sm" onclick="deleteAlloc('+r._idx+')">Delete</button>'
       +'</td>';
     tbody.appendChild(tr);
@@ -2009,13 +2014,26 @@ function renderMgrPages() {
 }
 
 /* ── Add / Edit Alloc Modal ── */
+function tatDaysBetween(reqStr, relStr) {
+  if(!reqStr || !relStr) return null;
+  var d1 = new Date(reqStr+'T00:00:00');
+  var d2 = new Date(relStr+'T00:00:00');
+  var days = Math.round((d2-d1)/86400000);
+  return isNaN(days) ? null : days;
+}
+function computeTAT() {
+  var out = document.getElementById('aTAT');
+  var days = tatDaysBetween(document.getElementById('aReq').value, document.getElementById('aDr').value);
+  if(days===null) out.value='';
+  else out.value = days<0 ? 'Invalid (released before requested)' : (days+' day'+(days===1?'':'s'));
+}
 function openAddModal() {
   mgrEditIdx = null;
   document.getElementById('allocModalTitle').textContent = 'Add Allocation';
-  ['aId','aNm','aEmpSearch','aYr','aRmk','aDept','aPos'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['aId','aNm','aEmpSearch','aYr','aRmk','aDept','aPos','aTAT'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   var dd=document.getElementById('aEmpDropdown');if(dd)dd.style.display='none';
   ['aEE','aER','aTt'].forEach(function(id){document.getElementById(id).value='0';});
-  ['aDa','aDr'].forEach(function(id){document.getElementById(id).value='';});
+  ['aReq','aDa','aDr'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('aCo').value='';
   document.getElementById('aBen').value='';
   document.getElementById('allocModal').classList.add('open');
@@ -2036,9 +2054,11 @@ function openEditModal(idx) {
   document.getElementById('aEE').value = r.ee;
   document.getElementById('aER').value = r.er;
   document.getElementById('aTt').value = r.tt;
+  document.getElementById('aReq').value = r.req || '';
   document.getElementById('aDa').value = r.da || '';
   document.getElementById('aDr').value = r.dr || '';
   document.getElementById('aRmk').value = r.rmk || '';
+  computeTAT();
   document.getElementById('allocModal').classList.add('open');
 }
 function closeAllocModal() {
@@ -2054,8 +2074,10 @@ function saveAlloc() {
     ee: parseFloat(document.getElementById('aEE').value)||0,
     er: parseFloat(document.getElementById('aER').value)||0,
     tt: parseFloat(document.getElementById('aTt').value)||0,
+    req: document.getElementById('aReq').value,
     da: document.getElementById('aDa').value,
     dr: document.getElementById('aDr').value,
+    tat: tatDaysBetween(document.getElementById('aReq').value, document.getElementById('aDr').value),
     rmk: document.getElementById('aRmk').value.trim(),
     _deleted: false
   };
@@ -2066,18 +2088,30 @@ function saveAlloc() {
     rec.lv = mgrAllocs[mgrEditIdx].lv || '';
     rec.pos = mgrAllocs[mgrEditIdx].pos || '';
     rec.dept = mgrAllocs[mgrEditIdx].dept || '';
+    rec._cancelled = mgrAllocs[mgrEditIdx]._cancelled || false;
     oldRec = mgrAllocs[mgrEditIdx];
     mgrAllocs[mgrEditIdx] = rec;
   } else {
     rec._idx = mgrAllocs.length;
+    rec._cancelled = false;
     mgrAllocs.push(rec);
   }
-  syncAllocToEmp(rec, oldRec, false);
+  syncAllocToEmp(rec, oldRec, rec._cancelled === true);
   var action = mgrEditIdx !== null ? 'Edit' : 'Add';
   var detail = (mgrEditIdx !== null ? 'Edited: ' : 'Added: ') + rec.ben + ' ' + (rec.yr||'') + ' | Total: ' + fmtFull(rec.tt);
   addChangeLog(action, rec.id, rec.nm, detail);
   closeAllocModal();
   mgrFilter();
+}
+function cancelAlloc(idx) {
+  var rec = mgrAllocs[idx];
+  if(!rec || rec._cancelled) return;
+  showConfirm('Cancel allocation for <strong>' + rec.nm + '</strong> — ' + rec.ben + ' ' + (rec.yr||'') + '? It will be excluded from benefit totals but kept on record.', function() {
+    rec._cancelled = true;
+    addChangeLog('Cancel', rec.id, rec.nm, rec.ben + ' ' + (rec.yr||'') + ' cancelled');
+    syncAllocToEmp(rec, null, true);
+    mgrFilter();
+  });
 }
 function deleteAlloc(idx) {
   var rec = mgrAllocs[idx];
@@ -4709,12 +4743,20 @@ document.addEventListener('DOMContentLoaded', function() {
         <input class="form-input" id="aTt" type="number" min="0" placeholder="0"/>
       </div>
       <div class="form-group">
+        <label class="form-label">Date of Request</label>
+        <input class="form-input" id="aReq" type="date" oninput="computeTAT()"/>
+      </div>
+      <div class="form-group">
         <label class="form-label">Date Approved</label>
         <input class="form-input" id="aDa" type="date"/>
       </div>
       <div class="form-group">
         <label class="form-label">Date Released</label>
-        <input class="form-input" id="aDr" type="date"/>
+        <input class="form-input" id="aDr" type="date" oninput="computeTAT()"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Turn Around Time <span style="color:var(--muted);font-weight:400;text-transform:none">(auto-calculated)</span></label>
+        <input class="form-input" id="aTAT" placeholder="Set request &amp; released dates" readonly style="background:rgba(0,0,0,.2);color:var(--muted)"/>
       </div>
       <div class="form-group form-grid-full">
         <label class="form-label">Remarks</label>
