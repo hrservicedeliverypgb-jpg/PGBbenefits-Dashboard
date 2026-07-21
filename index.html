@@ -2135,6 +2135,58 @@ function deleteAlloc(idx) {
   });
 }
 
+function printAllocForm() {
+  var g = function(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; };
+  var id=g('aId'), nm=g('aNm'), co=g('aCo'), dept=g('aDept'), pos=g('aPos'), ben=g('aBen');
+  if(!id || !nm || !ben) { alert('Fill in Employee, and Benefit Type before printing the form.'); return; }
+  var yr=g('aYr'), ee=g('aEE'), er=g('aER'), tt=g('aTt');
+  var req=g('aReq'), da=g('aDa'), dr=g('aDr'), tat=g('aTAT'), rmk=g('aRmk');
+  var money = function(v){ var n=parseFloat(v); return n>0 ? '₱'+n.toLocaleString(undefined,{maximumFractionDigits:2}) : '—'; };
+  var esc = function(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var row = function(label,val){ return '<div class="f-row"><div class="f-label">'+label+'</div><div class="f-val">'+(esc(val)||'&mdash;')+'</div></div>'; };
+  var now = new Date();
+  var stamp = now.toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'}) + ' ' + now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
+  var html = '<!doctype html><html><head><meta charset="UTF-8"><title>Benefit Allocation Request Form</title><style>'
+    + 'body{font-family:Arial,Helvetica,sans-serif;color:#1a2233;padding:32px;max-width:720px;margin:0 auto;}'
+    + 'h1{font-size:19px;margin:0 0 2px;}'
+    + '.sub{color:#667;font-size:12px;margin-bottom:20px;}'
+    + '.section-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#667;border-bottom:1px solid #ccc;padding-bottom:4px;margin:18px 0 8px;}'
+    + '.f-row{display:flex;padding:5px 0;border-bottom:1px solid #eee;font-size:13px;}'
+    + '.f-label{width:180px;color:#556;flex-shrink:0;}'
+    + '.f-val{font-weight:600;}'
+    + '.sign-grid{display:flex;gap:24px;margin-top:46px;}'
+    + '.sign-box{flex:1;text-align:center;}'
+    + '.sign-line{border-top:1px solid #333;margin-top:46px;padding-top:6px;font-size:11px;color:#556;}'
+    + '.footer{margin-top:30px;font-size:10px;color:#99a;text-align:right;}'
+    + '@media print{body{padding:0}}'
+    + '</style></head><body>'
+    + '<h1>PGB Benefits Dashboard</h1>'
+    + '<div class="sub">Benefit Allocation Request Form</div>'
+    + '<div class="section-title">Employee Information</div>'
+    + row('Employee ID', id) + row('Employee Name', nm) + row('Affiliate / Company', co) + row('Department', dept) + row('Position', pos)
+    + '<div class="section-title">Benefit Details</div>'
+    + row('Benefit Type', ben) + row('Year Acquired', yr)
+    + '<div class="section-title">Financial Breakdown</div>'
+    + row('EE Share', money(ee)) + row('ER Share', money(er)) + row('Total Amount', money(tt))
+    + '<div class="section-title">Timeline</div>'
+    + row('Date of Request', req) + row('Date Approved', da) + row('Date Released', dr) + row('Turn Around Time', tat)
+    + '<div class="section-title">Remarks</div>'
+    + '<div style="font-size:13px;min-height:20px;padding:4px 0">'+(esc(rmk)||'&mdash;')+'</div>'
+    + '<div class="sign-grid">'
+      + '<div class="sign-box"><div class="sign-line">Requested By</div></div>'
+      + '<div class="sign-box"><div class="sign-line">Approved By</div></div>'
+      + '<div class="sign-box"><div class="sign-line">Received By</div></div>'
+    + '</div>'
+    + '<div class="footer">Generated '+stamp+'</div>'
+    + '</body></html>';
+  var w = window.open('', '_blank');
+  if(!w) { alert('Please allow pop-ups to print this form.'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  w.onload = function(){ w.focus(); w.print(); };
+}
+
 
 
 /* ── Full tab refresh after upload ── */
@@ -4784,6 +4836,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="modal-footer">
       <button class="mgr-btn mgr-btn-secondary" onclick="closeAllocModal()">Cancel</button>
+      <button class="mgr-btn mgr-btn-secondary" onclick="printAllocForm()">Print Form</button>
       <button class="mgr-btn mgr-btn-primary" onclick="saveAlloc()">Save Allocation</button>
     </div>
   </div>
