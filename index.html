@@ -2140,7 +2140,7 @@ function printAllocForm() {
   var id=g('aId'), nm=g('aNm'), co=g('aCo'), dept=g('aDept'), pos=g('aPos'), ben=g('aBen');
   if(!id || !nm || !ben) { alert('Fill in Employee, and Benefit Type before printing the form.'); return; }
   var yr=g('aYr'), ee=g('aEE'), er=g('aER'), tt=g('aTt');
-  var req=g('aReq'), da=g('aDa'), dr=g('aDr'), tat=g('aTAT'), rmk=g('aRmk');
+  var req=g('aReq'), rmk=g('aRmk');
   var money = function(v){ var n=parseFloat(v); return n>0 ? '₱'+n.toLocaleString(undefined,{maximumFractionDigits:2}) : '—'; };
   var esc = function(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
   var row = function(label,val){ return '<div class="f-row"><div class="f-label">'+label+'</div><div class="f-val">'+(esc(val)||'&mdash;')+'</div></div>'; };
@@ -2169,7 +2169,7 @@ function printAllocForm() {
     + '<div class="section-title">Financial Breakdown</div>'
     + row('EE Share', money(ee)) + row('ER Share', money(er)) + row('Total Amount', money(tt))
     + '<div class="section-title">Timeline</div>'
-    + row('Date of Request', req) + row('Date Approved', da) + row('Date Released', dr) + row('Turn Around Time', tat)
+    + row('Date of Request', req)
     + '<div class="section-title">Remarks</div>'
     + '<div style="font-size:13px;min-height:20px;padding:4px 0">'+(esc(rmk)||'&mdash;')+'</div>'
     + '<div class="sign-grid">'
