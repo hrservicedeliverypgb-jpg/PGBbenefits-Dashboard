@@ -881,6 +881,7 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
     <div class="data-banner-dot"></div>
     <div class="data-banner-text" id="dataBannerText">Using embedded data</div>
     <div class="data-banner-meta" id="dataBannerMeta">5,038 employees &nbsp;&middot;&nbsp; 1,272 benefit records &nbsp;&middot;&nbsp; Last updated: Initial load</div>
+    <button class="mgr-btn mgr-btn-secondary mgr-btn-sm" onclick="resetLocalData()" style="margin-left:8px">Reset to original data</button>
   </div>
 
   <!-- Upload section -->
@@ -1320,6 +1321,36 @@ var fmtFull = function(n){ return n>0?'&#8369;'+n.toLocaleString(undefined,{maxi
 var ALL_EMP = EMP_WITH_BENS.map(function(e){ return Object.assign({},e,{hasBens:true}); }).concat(
   EMP_MINIMAL.map(function(e){ return {id:e[0],name:e[1],affiliate:e[2],dept:e[3],pos:e[4],gender:e[5],status:e[6],level:e[7],pos_level:e[8],hire:'',bens:[],total_ben:0,ben_count:0,hasBens:false}; })
 );
+
+/* ── Local persistence (per-browser save/restore of all live changes) ── */
+var LS_KEY = 'pgbDashboardState_v1';
+var _savedSnapshot = null;
+try {
+  var _rawSnap = localStorage.getItem(LS_KEY);
+  if(_rawSnap) _savedSnapshot = JSON.parse(_rawSnap);
+} catch(e) { console.warn('Could not read locally saved data:', e); }
+var _lsWarned = false;
+function saveLocalState() {
+  try {
+    var snapshot = {
+      savedAt: new Date().toISOString(),
+      ALL_EMP: ALL_EMP,
+      mgrAllocs: mgrAllocs,
+      pendingRequests: pendingRequests,
+      sepList: sepList,
+      changeLog: changeLog,
+      adminNotes: adminNotes
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(snapshot));
+  } catch(err) {
+    console.warn('Could not save local state:', err);
+    if(!_lsWarned) { _lsWarned = true; alert('Could not save your changes locally (browser storage may be full). Changes made this session may not persist after refresh.'); }
+  }
+}
+function clearLocalState() {
+  localStorage.removeItem(LS_KEY);
+}
+if(_savedSnapshot && _savedSnapshot.ALL_EMP) ALL_EMP = _savedSnapshot.ALL_EMP;
 
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
@@ -1918,43 +1949,46 @@ function populateAffSelect(selId) {
 }
 
 function initManage() {
-  if(mgrAllocs.length > 0) return; // already init
-  // Build flat alloc list from EMP_WITH_BENS and stamp _allocIdx on ALL_EMP bens
-  var idx = 0;
-  ALL_EMP.forEach(function(emp) {
-    if(!emp.hasBens) return;
-    emp.bens.forEach(function(b, j) {
-      b._allocIdx = idx; // stamp the index directly onto the bens entry in ALL_EMP
-      mgrAllocs.push({
-        _idx: idx++,
-        id: emp.id,
-        nm: emp.name,
-        co: emp.affiliate || b.co,
-        lv: emp.level,
-        pos: emp.pos,
-        dept: emp.dept,
-        ben: b.ben,
-        yr: b.yr,
-        ee: b.ee,
-        er: b.er,
-        tt: b.tt,
-        req: b.req || '',
-        da: b.da,
-        dr: b.dr,
-        tat: b.tat!=null ? b.tat : tatDaysBetween(b.req||'', b.da),
-        rmk: b.rmk,
-        _deleted: false
+  if(mgrAllocs.length === 0) {
+    // Build flat alloc list from EMP_WITH_BENS and stamp _allocIdx on ALL_EMP bens
+    var idx = 0;
+    ALL_EMP.forEach(function(emp) {
+      if(!emp.hasBens) return;
+      emp.bens.forEach(function(b, j) {
+        b._allocIdx = idx; // stamp the index directly onto the bens entry in ALL_EMP
+        mgrAllocs.push({
+          _idx: idx++,
+          id: emp.id,
+          nm: emp.name,
+          co: emp.affiliate || b.co,
+          lv: emp.level,
+          pos: emp.pos,
+          dept: emp.dept,
+          ben: b.ben,
+          yr: b.yr,
+          ee: b.ee,
+          er: b.er,
+          tt: b.tt,
+          req: b.req || '',
+          da: b.da,
+          dr: b.dr,
+          tat: b.tat!=null ? b.tat : tatDaysBetween(b.req||'', b.da),
+          rmk: b.rmk,
+          _deleted: false
+        });
       });
     });
-  });
+  }
 
   // Populate affiliate dropdowns
   ['mgrAff','sepAff','aCo'].forEach(populateAffSelect);
 
   // Populate year dropdown
   var yrSel = document.getElementById('mgrYear');
-  for(var y = 2026; y >= 2006; y--) {
-    var o = document.createElement('option'); o.value = y; o.textContent = y; yrSel.appendChild(o);
+  if(yrSel.options.length <= 1) {
+    for(var y = 2026; y >= 2006; y--) {
+      var o = document.createElement('option'); o.value = y; o.textContent = y; yrSel.appendChild(o);
+    }
   }
 
   mgrFilter();
@@ -2202,6 +2236,7 @@ function cancelRequest(idx) {
     rec._cancelled = true;
     addChangeLog('Cancel Request', rec.id, rec.nm, rec.ben + ' ' + (rec.yr||'') + ' request cancelled');
     reqFilter();
+    saveLocalState();
   });
 }
 function deleteRequest(idx) {
@@ -2211,6 +2246,7 @@ function deleteRequest(idx) {
     rec._deleted = true;
     addChangeLog('Delete Request', rec.id, rec.nm, rec.ben + ' ' + (rec.yr||'') + ' request deleted');
     reqFilter();
+    saveLocalState();
   });
 }
 
@@ -2348,6 +2384,7 @@ function saveAlloc() {
     }
     closeAllocModal();
     reqFilter();
+    saveLocalState();
     return;
   }
 
@@ -2362,6 +2399,7 @@ function saveAlloc() {
     closeAllocModal();
     reqFilter();
     mgrFilter();
+    saveLocalState();
     return;
   }
 
@@ -2383,6 +2421,7 @@ function saveAlloc() {
   addChangeLog(action, rec.id, rec.nm, detail);
   closeAllocModal();
   mgrFilter();
+  saveLocalState();
 }
 function cancelAlloc(idx) {
   var rec = mgrAllocs[idx];
@@ -2392,6 +2431,7 @@ function cancelAlloc(idx) {
     addChangeLog('Cancel', rec.id, rec.nm, rec.ben + ' ' + (rec.yr||'') + ' cancelled');
     syncAllocToEmp(rec, null, true);
     mgrFilter();
+    saveLocalState();
   });
 }
 function deleteAlloc(idx) {
@@ -2402,6 +2442,7 @@ function deleteAlloc(idx) {
     addChangeLog('Delete', rec.id, rec.nm, rec.ben + ' ' + (rec.yr||'') + ' deleted');
     syncAllocToEmp(rec, null, true);
     mgrFilter();
+    saveLocalState();
   });
 }
 
@@ -2522,6 +2563,7 @@ function refreshAllTabsAfterUpload() {
 
   // 6. REPORTS: update banner
   updateDataBanner();
+  saveLocalState();
 }
 
 /* ── Dashboard live refresh from Manage changes ── */
@@ -2868,6 +2910,7 @@ function saveSep() {
   sepFilter();
   // Refresh employees tab if active
   if(empReady){ empExpanded=null; empFilter(); }
+  saveLocalState();
 }
 function removeSep(i) {
   var e = sepList[i];
@@ -2884,6 +2927,7 @@ function removeSep(i) {
     sepFilter();
     // Refresh employees tab if active
     if(empReady){ empExpanded=null; empFilter(); }
+    saveLocalState();
   });
 }
 
@@ -3011,6 +3055,14 @@ function confirmNo() {
 
 /* ── Change log ── */
 var changeLog = [];
+if(_savedSnapshot) {
+  mgrAllocs = _savedSnapshot.mgrAllocs || [];
+  pendingRequests = _savedSnapshot.pendingRequests || [];
+  sepList = _savedSnapshot.sepList || [];
+  changeLog = _savedSnapshot.changeLog || [];
+  renderChangeLog();
+  updateDataBanner();
+}
 
 function addChangeLog(action, empId, empName, detail) {
   var now = new Date();
@@ -3052,6 +3104,7 @@ function clearChangeLog() {
   showConfirm('Clear all change log entries?', function() {
     changeLog = [];
     renderChangeLog();
+    saveLocalState();
   });
 }
 
@@ -3596,9 +3649,18 @@ function formatMgrAllocsCount() {
 function updateDataBanner() {
   var now = new Date().toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'});
   var benCnt = mgrAllocs.filter(function(r){return !r._deleted;}).length;
-  document.getElementById('dataBannerText').textContent = 'Live data — last updated '+now;
+  var savedNote = _savedSnapshot && _savedSnapshot.savedAt
+    ? ' (restored from this browser, saved '+new Date(_savedSnapshot.savedAt).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'})+')'
+    : '';
+  document.getElementById('dataBannerText').textContent = 'Live data — last updated '+now+savedNote;
   document.getElementById('dataBannerMeta').innerHTML =
     ALL_EMP.length.toLocaleString()+' employees &nbsp;&middot;&nbsp; '+benCnt.toLocaleString()+' benefit records';
+}
+function resetLocalData() {
+  showConfirm('Reset the dashboard to its original embedded data? This clears everything saved in this browser (uploads, requests, allocations, notes) and cannot be undone.', function() {
+    clearLocalState();
+    location.reload();
+  });
 }
 
 /* ── Download / Export ── */
@@ -4906,6 +4968,7 @@ document.addEventListener('keydown', function(e){
 
 /* ── Admin Notes (Analytics) ── */
 var adminNotes = [];          // { id, title, text, createdAt, updatedAt }
+if(_savedSnapshot && _savedSnapshot.adminNotes) adminNotes = _savedSnapshot.adminNotes;
 var editingNoteId = null;
 
 function showAdminNoteUI() {
@@ -4956,6 +5019,7 @@ function saveAdminNote() {
   // Re-render insights container with updated notes woven in
   if(typeof buildAnalysis === 'function') buildAnalysis();
   showAdminNoteUI();
+  saveLocalState();
 }
 
 function deleteAdminNote(noteId) {
@@ -4963,6 +5027,7 @@ function deleteAdminNote(noteId) {
     adminNotes = adminNotes.filter(function(n){ return n.id !== noteId; });
     if(typeof buildAnalysis === 'function') buildAnalysis();
     showAdminNoteUI();
+    saveLocalState();
   });
 }
 
