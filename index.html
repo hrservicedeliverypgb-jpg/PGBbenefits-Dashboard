@@ -477,8 +477,7 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
 .header-role{font-size:10px;font-weight:600;padding:2px 9px;border-radius:8px;margin-left:auto;flex-shrink:0;}
 .header-role.role-admin{background:rgba(201,168,76,.2);color:#C9A84C;}
 .header-role.role-hrsvp{background:rgba(55,138,221,.18);color:#5AABFF;}
-.header-role.role-pgbhr{background:rgba(29,158,117,.18);color:#3DD9A0;}
-.header-role.role-pgbhr{background:rgba(29,158,117,.18);color:#3DD9A0;}
+.header-role.role-hruser{background:rgba(29,158,117,.18);color:#3DD9A0;}
 
 
 /* ── Login role cards ── */
@@ -511,20 +510,79 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
   <div class="login-box">
     <div class="login-logo">
       <div class="login-logo-title"><span>Janica</span> Benefits Dashboard</div>
-      <div class="login-logo-sub" id="loginSub">Sign in to continue</div>
+      <div class="login-logo-sub" id="loginSub">Select your access level to continue</div>
     </div>
 
-    <div id="loginCredScreen">
+    <!-- Role selection screen -->
+    <div id="loginRoleScreen" style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+
+      <div class="login-role-card" onclick="showAdminLogin()">
+        <div class="login-role-card-icon" style="background:rgba(201,168,76,.18);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="login-role-card-body">
+          <div class="login-role-card-title" style="color:#C9A84C;">Admin</div>
+          <div class="login-role-card-desc">Full access to all tabs including Manage &amp; Request</div>
+        </div>
+        <div class="login-role-card-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+
+      <div class="login-role-card" onclick="enterAsSVP()">
+        <div class="login-role-card-icon" style="background:rgba(55,138,221,.18);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5AABFF" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+        </div>
+        <div class="login-role-card-body">
+          <div class="login-role-card-title" style="color:#5AABFF;">SVP HR</div>
+          <div class="login-role-card-desc">View only &mdash; all tabs except Manage &amp; Request</div>
+        </div>
+        <div class="login-role-card-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5AABFF" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+
+      <div class="login-role-card" onclick="showHrUserLogin()">
+        <div class="login-role-card-icon" style="background:rgba(29,158,117,.15);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3DD9A0" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+        </div>
+        <div class="login-role-card-body">
+          <div class="login-role-card-title" style="color:#3DD9A0;">HR User</div>
+          <div class="login-role-card-desc">View only &mdash; enter your name to continue</div>
+        </div>
+        <div class="login-role-card-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3DD9A0" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+
+    </div>
+
+    <!-- Admin credential form -->
+    <div id="loginCredScreen" style="display:none;">
+      <button onclick="backToRoles()" style="background:none;border:none;color:#8A9BB5;font-size:12px;cursor:pointer;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:5px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </button>
       <div class="login-field">
-        <label class="login-label" for="credUser">Email</label>
-        <input class="login-input" id="credUser" type="email" placeholder="Enter email" autocomplete="username"/>
+        <label class="login-label" for="credUser">Username</label>
+        <input class="login-input" id="credUser" type="text" placeholder="Enter username" autocomplete="username"/>
       </div>
       <div class="login-field">
         <label class="login-label" for="credPass">Password</label>
         <input class="login-input" id="credPass" type="password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doCredLogin()"/>
       </div>
       <button class="login-submit" id="credSubmitBtn" onclick="doCredLogin()">Sign In</button>
-      <div class="login-error" id="credError">Incorrect email or password.</div>
+      <div class="login-error" id="credError">Incorrect username or password.</div>
+    </div>
+
+    <!-- HR User login (name + shared password) -->
+    <div id="loginHrUserScreen" style="display:none;">
+      <button onclick="backToRoles()" style="background:none;border:none;color:#8A9BB5;font-size:12px;cursor:pointer;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:5px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </button>
+      <div class="login-field">
+        <label class="login-label" for="hrUserName">Your Name</label>
+        <input class="login-input" id="hrUserName" type="text" placeholder="Enter your name" autocomplete="name"/>
+      </div>
+      <div class="login-field">
+        <label class="login-label" for="hrUserPass">Password</label>
+        <input class="login-input" id="hrUserPass" type="password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doHrUserLogin()"/>
+      </div>
+      <button class="login-submit" id="hrUserSubmitBtn" onclick="doHrUserLogin()">Sign In</button>
+      <div class="login-error" id="hrUserError">Enter your name and the correct password.</div>
     </div>
 
   </div>
@@ -3097,7 +3155,7 @@ function addChangeLog(action, empId, empName, detail) {
   var now = new Date();
   var ts = now.toLocaleDateString('en-PH', {year:'numeric',month:'short',day:'numeric'})
            + ' ' + now.toLocaleTimeString('en-PH', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  changeLog.unshift({ ts: ts, action: action, id: empId, name: empName, detail: detail });
+  changeLog.unshift({ ts: ts, action: action, id: empId, name: empName, detail: detail, by: currentUserLabel || 'Admin' });
   renderChangeLog();
 }
 
@@ -3119,12 +3177,13 @@ function renderChangeLog() {
       +'<td class="mgr-id">'+e.id+'</td>'
       +'<td class="mgr-name">'+e.name+'</td>'
       +'<td style="color:var(--muted);font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+e.detail+'</td>'
+      +'<td style="color:var(--muted);font-size:11px;white-space:nowrap">'+(e.by||'Admin')+'</td>'
     +'</tr>';
   }).join('');
   container.innerHTML =
     '<div class="mgr-tbl-wrap"><table class="mgr-tbl">'
     +'<thead><tr>'
-    +'<th>Date &amp; Time</th><th>Action</th><th>ID No.</th><th>Employee Name</th><th>Details</th>'
+    +'<th>Date &amp; Time</th><th>Action</th><th>ID No.</th><th>Employee Name</th><th>Details</th><th>Encoded By</th>'
     +'</tr></thead>'
     +'<tbody>'+rows+'</tbody></table></div>';
 }
@@ -3567,6 +3626,8 @@ function applyNewPGBList(rows, fname) {
     console.log('[PGB Upload] ALL_EMP after rebuild:', ALL_EMP.length, 'employees');
     console.log('[PGB Upload] Sample IDs:', ALL_EMP.slice(0,3).map(function(e){return e.id;}));
 
+    addChangeLog('Upload', '—', '—', 'Employee list uploaded: ' + fname + ' (' + newEmp.length.toLocaleString() + ' employees)');
+
     // Refresh all tabs comprehensively
     refreshAllTabsAfterUpload();
 
@@ -3658,6 +3719,8 @@ function applyNewBenefits(rows, fname) {
     document.getElementById('benLoadedMeta').textContent = benCount.toLocaleString()+' benefit records loaded';
     setUploadStatus('ben', 'success', '✓ '+benCount.toLocaleString()+' records loaded. All tabs refreshed.');
     updateDataBanner();
+
+    addChangeLog('Upload', '—', '—', 'Benefits summary uploaded: ' + fname + ' (' + benCount.toLocaleString() + ' records)');
 
     // Refresh all tabs comprehensively
     refreshAllTabsAfterUpload();
@@ -4794,8 +4857,11 @@ function polRemovePdf() {
 }
 
 
-/* ===== LOGIN / ACCESS CONTROL (Firebase Auth — single admin account) ===== */
+/* ===== LOGIN / ACCESS CONTROL (Firebase Auth: real admin account + anonymous view-only roles) ===== */
 var currentRole = null;
+var currentUserLabel = '';
+var ADMIN_EMAIL = 'jvlegaspi@primary.com.ph';
+var ROLE_LABELS = { admin: 'Admin', hrsvp: 'SVP HR', hruser: '' };
 
 var firebaseConfig = {
   apiKey: "AIzaSyDHTb2p5fPw0Se0bArixGOaQ0jbbIA_vyQ",
@@ -4815,8 +4881,8 @@ function enterAs(role) {
   document.getElementById('mainHeader').style.display = '';
   document.getElementById('mainContent').style.display = '';
   var badge = document.getElementById('headerRoleBadge');
-  badge.textContent = 'Admin';
-  badge.className = 'header-role role-admin';
+  badge.textContent = currentUserLabel || ROLE_LABELS[role] || role;
+  badge.className = 'header-role role-' + role;
   badge.style.display = '';
   var signOut = document.getElementById('signOutBtn');
   if(signOut) signOut.style.display = '';
@@ -4825,20 +4891,49 @@ function enterAs(role) {
   if(dashBtn) showPage('dashboard', dashBtn);
 }
 
+function showAdminLogin() {
+  document.getElementById('loginRoleScreen').style.display = 'none';
+  document.getElementById('loginCredScreen').style.display = 'block';
+  document.getElementById('loginSub').textContent = 'Admin Login';
+  document.getElementById('credUser').value = '';
+  document.getElementById('credPass').value = '';
+  document.getElementById('credError').classList.remove('show');
+  document.getElementById('credUser').focus();
+}
+
+function showHrUserLogin() {
+  document.getElementById('loginRoleScreen').style.display = 'none';
+  document.getElementById('loginHrUserScreen').style.display = 'block';
+  document.getElementById('loginSub').textContent = 'HR User Login';
+  document.getElementById('hrUserName').value = '';
+  document.getElementById('hrUserPass').value = '';
+  document.getElementById('hrUserError').classList.remove('show');
+  document.getElementById('hrUserName').focus();
+}
+
+function backToRoles() {
+  document.getElementById('loginRoleScreen').style.display = 'flex';
+  document.getElementById('loginCredScreen').style.display = 'none';
+  document.getElementById('loginHrUserScreen').style.display = 'none';
+  document.getElementById('loginSub').textContent = 'Select your access level to continue';
+}
+
 function doCredLogin() {
-  var email = document.getElementById('credUser').value.trim();
+  var user  = document.getElementById('credUser').value.trim();
   var pass  = document.getElementById('credPass').value;
   var errEl = document.getElementById('credError');
   var btn   = document.getElementById('credSubmitBtn');
   errEl.classList.remove('show');
-  if(!email || !pass) {
-    errEl.textContent = 'Enter your email and password.';
+  if(user.toLowerCase() !== 'admin' || !pass) {
+    errEl.textContent = 'Incorrect username or password.';
     errEl.classList.add('show');
     return;
   }
   btn.disabled = true; btn.textContent = 'Signing in...';
-  fbAuth.signInWithEmailAndPassword(email, pass).catch(function() {
-    errEl.textContent = 'Incorrect email or password.';
+  fbAuth.signInWithEmailAndPassword(ADMIN_EMAIL, pass).then(function() {
+    currentUserLabel = 'Admin';
+  }).catch(function() {
+    errEl.textContent = 'Incorrect username or password.';
     errEl.classList.add('show');
     document.getElementById('credPass').value = '';
     document.getElementById('credPass').focus();
@@ -4847,25 +4942,58 @@ function doCredLogin() {
   });
 }
 
+function enterAsSVP() {
+  fbAuth.signInAnonymously().then(function() {
+    currentUserLabel = 'SVP HR';
+    enterAs('hrsvp');
+    loadCloudState();
+  }).catch(function(err) {
+    alert('Could not sign in (' + err.message + '). Please try again.');
+  });
+}
+
+function doHrUserLogin() {
+  var name  = document.getElementById('hrUserName').value.trim();
+  var pass  = document.getElementById('hrUserPass').value;
+  var errEl = document.getElementById('hrUserError');
+  var btn   = document.getElementById('hrUserSubmitBtn');
+  errEl.classList.remove('show');
+  if(!name || pass !== 'hruser') {
+    errEl.textContent = 'Enter your name and the correct password.';
+    errEl.classList.add('show');
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  fbAuth.signInAnonymously().then(function() {
+    currentUserLabel = name;
+    enterAs('hruser');
+    loadCloudState();
+  }).catch(function(err) {
+    errEl.textContent = 'Could not sign in (' + err.message + ').';
+    errEl.classList.add('show');
+  }).then(function() {
+    btn.disabled = false; btn.textContent = 'Sign In';
+  });
+}
+
 function doSignOut() {
   fbAuth.signOut();
   currentRole = null;
+  currentUserLabel = '';
   document.getElementById('mainHeader').style.display = 'none';
   document.getElementById('mainContent').style.display = 'none';
   document.getElementById('loginOverlay').style.display = '';
   document.getElementById('signOutBtn').style.display = 'none';
   document.getElementById('headerRoleBadge').style.display = 'none';
-  document.getElementById('credUser').value = '';
-  document.getElementById('credPass').value = '';
-  document.getElementById('credError').classList.remove('show');
+  backToRoles();
 }
 
 function applyRoleRestrictions(role) {
-  // Single-admin dashboard: Manage and Request are always available once signed in.
   var manageBtn = document.querySelector('.nav-btn[onclick*="manage"]');
   var requestBtn = document.querySelector('.nav-btn[onclick*="request"]');
-  if(manageBtn) manageBtn.style.display = '';
-  if(requestBtn) requestBtn.style.display = '';
+  var show = role === 'admin' ? '' : 'none';
+  if(manageBtn) manageBtn.style.display = show;
+  if(requestBtn) requestBtn.style.display = show;
 }
 
 var _origShowPage = showPage;
@@ -4874,10 +5002,11 @@ showPage = function(id, btn) {
   _origShowPage(id, btn);
 };
 
-// Firebase keeps the session across reloads/devices — this fires immediately with
-// the restored session (if any) or null, and again on every sign-in/out.
+// Firebase keeps the REAL admin session across reloads/devices. Anonymous
+// SVP HR / HR User sessions are re-chosen fresh on every page load.
 fbAuth.onAuthStateChanged(function(user) {
-  if(user) {
+  if(user && !user.isAnonymous) {
+    currentUserLabel = 'Admin';
     enterAs('admin');
     loadCloudState();
   }
