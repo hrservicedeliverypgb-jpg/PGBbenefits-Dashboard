@@ -593,6 +593,10 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
     Manage
   </button>
+  <button class="nav-btn" onclick="showPage('request',this)">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="12" y1="12" x2="12" y2="18"/></svg>
+    Request
+  </button>
   <button class="nav-btn" onclick="showPage('upload',this)">
     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
     Reports
@@ -768,7 +772,6 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
       <select class="mgr-sel" id="mgrYear" onchange="mgrFilter()">
         <option value="">All years</option>
       </select>
-      <button class="mgr-btn mgr-btn-primary" onclick="openAddModal()">+ Add Allocation</button>
     </div>
     <div class="mgr-stats-bar" id="mgrStatsBar"></div>
     <div class="mgr-tbl-wrap">
@@ -824,6 +827,49 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
       <div id="clContainer"><div class="changelog-empty">No changes recorded yet. Actions in Allocations and Separated Employees will appear here.</div></div>
     </div>
   </div>
+
+</div>
+</div>
+
+<!-- REQUEST PAGE -->
+<div id="page-request" class="page">
+<div class="content">
+
+  <div class="mgr-toolbar">
+    <div class="mgr-search-wrap">
+      <input class="mgr-search" id="reqSearch" placeholder="Search name, ID, benefit type, affiliate..." oninput="reqSearchInput()"/>
+      <button class="mgr-search-clear" id="reqClear" onclick="reqClearSearch()" title="Clear">&#10005;</button>
+    </div>
+    <select class="mgr-sel" id="reqAff" onchange="reqFilter()">
+      <option value="">All affiliates</option>
+    </select>
+    <select class="mgr-sel" id="reqBen" onchange="reqFilter()">
+      <option value="">All benefit types</option>
+      <option value="Laptop">Laptop</option><option value="Car">Car</option><option value="Motorcycle">Motorcycle</option>
+      <option value="Chinabank">Chinabank</option><option value="Bereavement">Bereavement</option><option value="Material">Material</option>
+      <option value="Marital">Marital</option><option value="Housing">Housing</option><option value="Calamity/Fire">Calamity/Fire</option>
+      <option value="Board Exam">Board Exam</option><option value="Citifi">Citifi</option><option value="ETEEAP">ETEEAP</option>
+      <option value="Medical">Medical</option><option value="Tablet">Tablet</option>
+    </select>
+    <select class="mgr-sel" id="reqYear" onchange="reqFilter()">
+      <option value="">All years</option>
+    </select>
+    <button class="mgr-btn mgr-btn-primary" onclick="openNewRequest()">+ New Request</button>
+  </div>
+  <div class="mgr-stats-bar" id="reqStatsBar"></div>
+  <div class="mgr-tbl-wrap">
+    <table class="mgr-tbl">
+      <thead><tr>
+        <th>ID No.</th><th>Employee Name</th><th>Affiliate</th>
+        <th>Benefit Type</th><th>Year</th>
+        <th class="r">EE Share</th><th class="r">ER Share</th><th class="r">Total</th>
+        <th>Date of Request</th><th>Remarks</th><th>Status</th>
+        <th>Actions</th>
+      </tr></thead>
+      <tbody id="reqBody"></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="reqPages"></div>
 
 </div>
 </div>
@@ -1284,6 +1330,7 @@ function showPage(id,btn){
   if(id==='dashboard' && activeAff) closeAff();
   if(id==='employees'){ initEmp(); resetEmpSearch(); }
   if(id==='manage'){ initManage(); resetMgrSearch(); resetSepSearch(); }
+  if(id==='request'){ initRequest(); resetReqSearch(); }
   if(id==='summary') initAnalytics();
   if(id==='policy'){ initPolicy(); resetPolSearch(); }
 }
@@ -1850,6 +1897,14 @@ var sepList = [];       // separated employees list
 var sepFiltered = [];
 var sepPage = 0;
 
+var REQ_PAGE = 50;
+var pendingRequests = [];   // benefit requests not yet finalized/posted
+var reqFiltered = [];
+var reqPage = 0;
+var reqEditIdx = null;      // index into pendingRequests being edited/finalized
+var reqReady = false;
+var allocModalMode = 'editManage'; // 'newRequest' | 'editRequest' | 'finalize' | 'editManage'
+
 function showMgrTab(id, btn) {
   document.querySelectorAll('.manage-tab').forEach(function(b){b.classList.remove('active');});
   document.querySelectorAll('.manage-panel').forEach(function(p){p.classList.remove('active');});
@@ -2024,6 +2079,145 @@ function renderMgrPages() {
   pg.appendChild(info);
 }
 
+/* ===== REQUEST TAB ===== */
+function initRequest() {
+  if(reqReady) return;
+  reqReady = true;
+  var affs = ['PSC','PHI','PPC','CSI','PTMSI','CSPIC','MAAYO','THAM','ABC','AMICI','SKILLS','PSEFI','PSI','SLM','AC','MC123','RDC'];
+  var sel = document.getElementById('reqAff');
+  affs.forEach(function(a){ var o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); });
+  var yrSel = document.getElementById('reqYear');
+  for(var y = 2026; y >= 2006; y--) { var o = document.createElement('option'); o.value = y; o.textContent = y; yrSel.appendChild(o); }
+  reqFilter();
+}
+function reqSearchInput() {
+  var v = document.getElementById('reqSearch').value;
+  document.getElementById('reqClear').classList.toggle('visible', v.length > 0);
+  reqFilter();
+}
+function reqClearSearch() {
+  document.getElementById('reqSearch').value = '';
+  document.getElementById('reqClear').classList.remove('visible');
+  document.getElementById('reqSearch').focus();
+  reqFilter();
+}
+function resetReqSearch() {
+  var el = document.getElementById('reqSearch');
+  if(!el) return;
+  el.value = '';
+  document.getElementById('reqClear').classList.remove('visible');
+  ['reqAff','reqBen','reqYear'].forEach(function(id){ var f=document.getElementById(id); if(f) f.value=''; });
+  reqFilter();
+}
+function reqFilter() {
+  var q = document.getElementById('reqSearch').value.toLowerCase().trim();
+  var aff = document.getElementById('reqAff').value;
+  var ben = document.getElementById('reqBen').value;
+  var yr = document.getElementById('reqYear').value;
+  reqFiltered = pendingRequests.filter(function(r) {
+    if(r._deleted || r._finalized) return false;
+    if(aff && r.co !== aff) return false;
+    if(ben && r.ben !== ben) return false;
+    if(yr && String(r.yr) !== yr) return false;
+    if(q) {
+      var hay = (r.id+' '+r.nm+' '+r.co+' '+r.ben+' '+(r.rmk||'')).toLowerCase();
+      if(hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+  reqFiltered.sort(function(a, b) {
+    var coA = (a.co||'').toLowerCase(), coB = (b.co||'').toLowerCase();
+    if(coA < coB) return -1;
+    if(coA > coB) return 1;
+    var nmA = (a.nm||'').toLowerCase(), nmB = (b.nm||'').toLowerCase();
+    return nmA < nmB ? -1 : nmA > nmB ? 1 : 0;
+  });
+  reqPage = 0;
+  renderReqStats();
+  renderReqRows();
+  renderReqPages();
+}
+function renderReqStats() {
+  var activeReqs = reqFiltered.filter(function(r){return !r._cancelled;});
+  var totalAmt = activeReqs.reduce(function(s,r){return s+r.tt;},0);
+  document.getElementById('reqStatsBar').innerHTML =
+    '<div class="mgr-stat">Showing <strong>'+reqFiltered.length.toLocaleString()+'</strong> requests</div>'
+    +'<div class="mgr-stat">Pending amount: <strong style="color:var(--gold)">'+fmtFull(totalAmt)+'</strong></div>';
+}
+function renderReqRows() {
+  var tbody = document.getElementById('reqBody');
+  tbody.innerHTML = '';
+  var start = reqPage * REQ_PAGE, end = Math.min(start + REQ_PAGE, reqFiltered.length);
+  for(var i = start; i < end; i++) {
+    var r = reqFiltered[i];
+    var color = BEN_COLORS[r.ben] || '#888';
+    var tr = document.createElement('tr');
+    if(r._cancelled) tr.style.opacity = '.55';
+    var statusBadge = r._cancelled
+      ? '<span class="badge" style="background:rgba(226,75,74,.12);color:#FF7B7A">Cancelled</span>'
+      : '<span class="badge" style="background:rgba(201,168,76,.15);color:var(--gold)">Pending</span>';
+    tr.innerHTML =
+      '<td class="mgr-id">'+r.id+'</td>'
+      +'<td class="mgr-name">'+r.nm+'</td>'
+      +'<td><span class="badge b-aff">'+(r.co||'&mdash;')+'</span></td>'
+      +'<td><span class="badge" style="background:'+color+'22;color:'+color+'">'+r.ben+'</span></td>'
+      +'<td>'+(r.yr||'&mdash;')+'</td>'
+      +'<td class="r" style="color:var(--pink)">'+(r.ee>0?fmtFull(r.ee):'&mdash;')+'</td>'
+      +'<td class="r" style="color:var(--orange)">'+(r.er>0?fmtFull(r.er):'&mdash;')+'</td>'
+      +'<td class="r" style="color:var(--gold);font-weight:700">'+(r.tt>0?fmtFull(r.tt):'&mdash;')+'</td>'
+      +'<td style="color:var(--muted);font-size:11px">'+(r.req||'&mdash;')+'</td>'
+      +'<td class="mgr-trunc" style="color:var(--muted);font-size:11px">'+(r.rmk||'&mdash;')+'</td>'
+      +'<td>'+statusBadge+'</td>'
+      +'<td style="white-space:nowrap">'
+        +'<button class="mgr-btn mgr-btn-secondary mgr-btn-sm" onclick="openEditRequest('+r._reqIdx+')">Edit</button> '
+        +(r._cancelled
+          ? ''
+          : '<button class="mgr-btn mgr-btn-primary mgr-btn-sm" onclick="openFinalize('+r._reqIdx+')">Finalize</button> '
+            +'<button class="mgr-btn mgr-btn-secondary mgr-btn-sm" onclick="cancelRequest('+r._reqIdx+')">Cancel</button> ')
+        +'<button class="mgr-btn mgr-btn-danger mgr-btn-sm" onclick="deleteRequest('+r._reqIdx+')">Delete</button>'
+      +'</td>';
+    tbody.appendChild(tr);
+  }
+}
+function renderReqPages() {
+  var total = Math.ceil(reqFiltered.length / REQ_PAGE);
+  var pg = document.getElementById('reqPages'); pg.innerHTML = '';
+  if(total <= 1) return;
+  var prev = document.createElement('button'); prev.className='pg-btn'; prev.textContent='\u2190 Prev'; if(reqPage===0) prev.setAttribute('disabled','');
+  prev.onclick = function(){if(reqPage>0){reqPage--;renderReqRows();renderReqPages();}};
+  pg.appendChild(prev);
+  var s = Math.max(0,reqPage-2), e2 = Math.min(total-1,reqPage+2);
+  for(var i=s;i<=e2;i++){
+    var b = document.createElement('button'); b.className='pg-btn'+(i===reqPage?' cur':''); b.textContent=i+1;
+    (function(pi){b.onclick=function(){reqPage=pi;renderReqRows();renderReqPages();};})(i);
+    pg.appendChild(b);
+  }
+  var next = document.createElement('button'); next.className='pg-btn'; next.textContent='Next \u2192'; if(reqPage>=total-1) next.setAttribute('disabled','');
+  next.onclick = function(){if(reqPage<total-1){reqPage++;renderReqRows();renderReqPages();}};
+  pg.appendChild(next);
+  var info = document.createElement('span'); info.className='pg-info';
+  info.textContent = 'Page '+(reqPage+1)+' of '+total+' \u00b7 '+reqFiltered.length.toLocaleString()+' requests';
+  pg.appendChild(info);
+}
+function cancelRequest(idx) {
+  var rec = pendingRequests[idx];
+  if(!rec || rec._cancelled) return;
+  showConfirm('Cancel this request for <strong>' + rec.nm + '</strong> \u2014 ' + rec.ben + ' ' + (rec.yr||'') + '?', function() {
+    rec._cancelled = true;
+    addChangeLog('Cancel Request', rec.id, rec.nm, rec.ben + ' ' + (rec.yr||'') + ' request cancelled');
+    reqFilter();
+  });
+}
+function deleteRequest(idx) {
+  var rec = pendingRequests[idx];
+  if(!rec) return;
+  showConfirm('Delete this request for <strong>' + rec.nm + '</strong> \u2014 ' + rec.ben + ' ' + (rec.yr||'') + '?', function() {
+    rec._deleted = true;
+    addChangeLog('Delete Request', rec.id, rec.nm, rec.ben + ' ' + (rec.yr||'') + ' request deleted');
+    reqFilter();
+  });
+}
+
 /* ── Add / Edit Alloc Modal ── */
 function tatDaysBetween(reqStr, relStr) {
   if(!reqStr || !relStr) return null;
@@ -2038,22 +2232,21 @@ function computeTAT() {
   if(days===null) out.value='';
   else out.value = days<0 ? 'Invalid (released before requested)' : (days+' day'+(days===1?'':'s'));
 }
-function openAddModal() {
-  mgrEditIdx = null;
-  document.getElementById('allocModalTitle').textContent = 'Add Allocation';
+function setAllocModalDateFieldsVisible(show) {
+  ['aDaGroup','aDrGroup','aTATGroup'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.style.display = show ? '' : 'none';
+  });
+}
+function clearAllocForm() {
   ['aId','aNm','aEmpSearch','aYr','aRmk','aDept','aPos','aTAT'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   var dd=document.getElementById('aEmpDropdown');if(dd)dd.style.display='none';
   ['aEE','aER','aTt'].forEach(function(id){document.getElementById(id).value='0';});
   ['aReq','aDa','aDr'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('aCo').value='';
   document.getElementById('aBen').value='';
-  document.getElementById('allocModal').classList.add('open');
 }
-function openEditModal(idx) {
-  var r = mgrAllocs[idx];
-  if(!r) return;
-  mgrEditIdx = idx;
-  document.getElementById('allocModalTitle').textContent = 'Edit Allocation';
+function populateAllocForm(r) {
   document.getElementById('aId').value = r.id;
   document.getElementById('aNm').value = r.nm;
   document.getElementById('aEmpSearch').value = r.nm + ' (' + r.id + ')';
@@ -2070,6 +2263,51 @@ function openEditModal(idx) {
   document.getElementById('aDr').value = r.dr || '';
   document.getElementById('aRmk').value = r.rmk || '';
   computeTAT();
+}
+function openNewRequest() {
+  mgrEditIdx = null;
+  reqEditIdx = null;
+  allocModalMode = 'newRequest';
+  document.getElementById('allocModalTitle').textContent = 'New Request';
+  clearAllocForm();
+  setAllocModalDateFieldsVisible(false);
+  document.getElementById('allocSaveBtn').textContent = 'Save Request';
+  document.getElementById('allocModal').classList.add('open');
+}
+function openEditRequest(idx) {
+  var r = pendingRequests[idx];
+  if(!r) return;
+  mgrEditIdx = null;
+  reqEditIdx = idx;
+  allocModalMode = 'editRequest';
+  document.getElementById('allocModalTitle').textContent = 'Edit Request';
+  populateAllocForm(r);
+  setAllocModalDateFieldsVisible(false);
+  document.getElementById('allocSaveBtn').textContent = 'Save Request';
+  document.getElementById('allocModal').classList.add('open');
+}
+function openFinalize(idx) {
+  var r = pendingRequests[idx];
+  if(!r || r._cancelled || r._finalized) return;
+  mgrEditIdx = null;
+  reqEditIdx = idx;
+  allocModalMode = 'finalize';
+  document.getElementById('allocModalTitle').textContent = 'Finalize Request';
+  populateAllocForm(r);
+  setAllocModalDateFieldsVisible(true);
+  document.getElementById('allocSaveBtn').textContent = 'Finalize & Post';
+  document.getElementById('allocModal').classList.add('open');
+}
+function openEditModal(idx) {
+  var r = mgrAllocs[idx];
+  if(!r) return;
+  mgrEditIdx = idx;
+  reqEditIdx = null;
+  allocModalMode = 'editManage';
+  document.getElementById('allocModalTitle').textContent = 'Edit Allocation';
+  populateAllocForm(r);
+  setAllocModalDateFieldsVisible(true);
+  document.getElementById('allocSaveBtn').textContent = 'Save Allocation';
   document.getElementById('allocModal').classList.add('open');
 }
 function closeAllocModal() {
@@ -2080,6 +2318,8 @@ function saveAlloc() {
     id: document.getElementById('aId').value.trim(),
     nm: document.getElementById('aNm').value.trim(),
     co: document.getElementById('aCo').value,
+    pos: document.getElementById('aPos').value.trim(),
+    dept: document.getElementById('aDept').value.trim(),
     ben: document.getElementById('aBen').value,
     yr: parseInt(document.getElementById('aYr').value)||null,
     ee: parseFloat(document.getElementById('aEE').value)||0,
@@ -2093,12 +2333,44 @@ function saveAlloc() {
     _deleted: false
   };
   if(!rec.id || !rec.nm || !rec.ben) { alert('Employee ID, Name and Benefit Type are required.'); return; }
+
+  if(allocModalMode === 'newRequest' || allocModalMode === 'editRequest') {
+    if(reqEditIdx !== null) {
+      rec._reqIdx = reqEditIdx;
+      rec._cancelled = pendingRequests[reqEditIdx]._cancelled || false;
+      rec._finalized = false;
+      pendingRequests[reqEditIdx] = rec;
+      addChangeLog('Edit Request', rec.id, rec.nm, 'Edited request: ' + rec.ben + ' ' + (rec.yr||''));
+    } else {
+      rec._reqIdx = pendingRequests.length;
+      rec._cancelled = false;
+      rec._finalized = false;
+      pendingRequests.push(rec);
+      addChangeLog('Request', rec.id, rec.nm, 'New request: ' + rec.ben + ' ' + (rec.yr||'') + ' | Total: ' + fmtFull(rec.tt));
+    }
+    closeAllocModal();
+    reqFilter();
+    return;
+  }
+
+  if(allocModalMode === 'finalize') {
+    if(!rec.da) { alert('Date Approved is required to finalize this request.'); return; }
+    rec._idx = mgrAllocs.length;
+    rec._cancelled = false;
+    mgrAllocs.push(rec);
+    syncAllocToEmp(rec, null, false);
+    if(reqEditIdx !== null && pendingRequests[reqEditIdx]) pendingRequests[reqEditIdx]._finalized = true;
+    addChangeLog('Finalize', rec.id, rec.nm, 'Finalized & posted: ' + rec.ben + ' ' + (rec.yr||'') + ' | Total: ' + fmtFull(rec.tt));
+    closeAllocModal();
+    reqFilter();
+    mgrFilter();
+    return;
+  }
+
   var oldRec = null;
   if(mgrEditIdx !== null) {
     rec._idx = mgrEditIdx;
     rec.lv = mgrAllocs[mgrEditIdx].lv || '';
-    rec.pos = mgrAllocs[mgrEditIdx].pos || '';
-    rec.dept = mgrAllocs[mgrEditIdx].dept || '';
     rec._cancelled = mgrAllocs[mgrEditIdx]._cancelled || false;
     oldRec = mgrAllocs[mgrEditIdx];
     mgrAllocs[mgrEditIdx] = rec;
@@ -4516,16 +4788,19 @@ function doSignOut() {
 
 function applyRoleRestrictions(role) {
   var manageBtn = document.querySelector('.nav-btn[onclick*="manage"]');
+  var requestBtn = document.querySelector('.nav-btn[onclick*="request"]');
   if(role === 'hrsvp' || role === 'pgbhr') {
     if(manageBtn) manageBtn.style.display = 'none';
+    if(requestBtn) requestBtn.style.display = 'none';
   } else {
     if(manageBtn) manageBtn.style.display = '';
+    if(requestBtn) requestBtn.style.display = '';
   }
 }
 
 var _origShowPage = showPage;
 showPage = function(id, btn) {
-  if(id === 'manage' && currentRole !== 'admin') return;
+  if((id === 'manage' || id === 'request') && currentRole !== 'admin') return;
   _origShowPage(id, btn);
 };
 
@@ -4819,15 +5094,15 @@ document.addEventListener('DOMContentLoaded', function() {
         <label class="form-label">Date of Request</label>
         <input class="form-input" id="aReq" type="date" oninput="computeTAT()"/>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="aDaGroup">
         <label class="form-label">Date Approved</label>
         <input class="form-input" id="aDa" type="date" oninput="computeTAT()"/>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="aDrGroup">
         <label class="form-label">Date Released</label>
         <input class="form-input" id="aDr" type="date"/>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="aTATGroup">
         <label class="form-label">Turn Around Time <span style="color:var(--muted);font-weight:400;text-transform:none">(auto-calculated)</span></label>
         <input class="form-input" id="aTAT" placeholder="Set request &amp; approved dates" readonly style="background:rgba(0,0,0,.2);color:var(--muted)"/>
       </div>
@@ -4839,7 +5114,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-footer">
       <button class="mgr-btn mgr-btn-secondary" onclick="closeAllocModal()">Cancel</button>
       <button class="mgr-btn mgr-btn-secondary" onclick="printAllocForm()">Print Form</button>
-      <button class="mgr-btn mgr-btn-primary" onclick="saveAlloc()">Save Allocation</button>
+      <button class="mgr-btn mgr-btn-primary" id="allocSaveBtn" onclick="saveAlloc()">Save Allocation</button>
     </div>
   </div>
 </div>
