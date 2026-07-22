@@ -11,6 +11,9 @@ if(typeof Chart === 'undefined') {
   document.write('<scr'+'ipt src="https://unpkg.com/chart.js@4.4.1/dist/chart.umd.js"><\/scr'+'ipt>');
 }
 </script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -507,70 +510,21 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
 <div id="loginOverlay" class="login-overlay">
   <div class="login-box">
     <div class="login-logo">
-      <div class="login-logo-title"><span>PGB</span> Benefits Dashboard</div>
-      <div class="login-logo-sub" id="loginSub">Select your access level to continue</div>
+      <div class="login-logo-title"><span>Janica</span> Benefits Dashboard</div>
+      <div class="login-logo-sub" id="loginSub">Sign in to continue</div>
     </div>
 
-    <!-- Role selection screen -->
-    <div id="loginRoleScreen" style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
-
-      <div class="login-role-card" onclick="showRoleLogin('admin')">
-        <div class="login-role-card-icon" style="background:rgba(201,168,76,.18);">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <div class="login-role-card-body">
-          <div class="login-role-card-title" style="color:#C9A84C;">Admin</div>
-          <div class="login-role-card-desc">Full access to all tabs including Manage</div>
-        </div>
-        <div class="login-role-card-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
-      </div>
-
-      <div class="login-role-card" onclick="enterAs('hrsvp')">
-        <div class="login-role-card-icon" style="background:rgba(55,138,221,.18);">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5AABFF" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
-        </div>
-        <div class="login-role-card-body">
-          <div class="login-role-card-title" style="color:#5AABFF;">HR SVP</div>
-          <div class="login-role-card-desc">View only &mdash; all tabs except Manage</div>
-        </div>
-        <div class="login-role-card-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5AABFF" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
-      </div>
-
-      <div class="login-role-card" onclick="showRoleLogin('pgbhr')">
-        <div class="login-role-card-icon" style="background:rgba(29,158,117,.15);">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3DD9A0" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
-        </div>
-        <div class="login-role-card-body">
-          <div class="login-role-card-title" style="color:#3DD9A0;">PGB HR</div>
-          <div class="login-role-card-desc">Requires username and password</div>
-        </div>
-        <div class="login-role-card-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3DD9A0" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
-      </div>
-
-    </div>
-
-    <!-- Credential login form (admin / pgbhr) -->
-    <div id="loginCredScreen" style="display:none;">
-      <button onclick="backToRoles()" style="background:none;border:none;color:#8A9BB5;font-size:12px;cursor:pointer;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:5px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Back
-      </button>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-        <div id="credRoleIcon" style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;"></div>
-        <div>
-          <div id="credRoleTitle" style="font-size:13px;font-weight:700;"></div>
-          <div style="font-size:10px;color:#8A9BB5;">Enter your credentials to continue</div>
-        </div>
-      </div>
+    <div id="loginCredScreen">
       <div class="login-field">
-        <label class="login-label" for="credUser">Username</label>
-        <input class="login-input" id="credUser" type="text" placeholder="Enter username" autocomplete="username"/>
+        <label class="login-label" for="credUser">Email</label>
+        <input class="login-input" id="credUser" type="email" placeholder="Enter email" autocomplete="username"/>
       </div>
       <div class="login-field">
         <label class="login-label" for="credPass">Password</label>
         <input class="login-input" id="credPass" type="password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doCredLogin()"/>
       </div>
       <button class="login-submit" id="credSubmitBtn" onclick="doCredLogin()">Sign In</button>
-      <div class="login-error" id="credError">Incorrect username or password.</div>
+      <div class="login-error" id="credError">Incorrect email or password.</div>
     </div>
 
   </div>
@@ -1346,11 +1300,71 @@ function saveLocalState() {
     console.warn('Could not save local state:', err);
     if(!_lsWarned) { _lsWarned = true; alert('Could not save your changes locally (browser storage may be full). Changes made this session may not persist after refresh.'); }
   }
+  saveCloudState();
 }
 function clearLocalState() {
   localStorage.removeItem(LS_KEY);
 }
 if(_savedSnapshot && _savedSnapshot.ALL_EMP) ALL_EMP = _savedSnapshot.ALL_EMP;
+
+/* ── Cloud sync (Firestore) — shares data across every signed-in device ── */
+var CLOUD_CHUNK_SIZE = 1000;
+var _cloudSaveInFlight = false;
+var _cloudSaveQueued = false;
+var _cloudWarned = false;
+function saveCloudState() {
+  if(typeof fbAuth === 'undefined' || !fbAuth.currentUser) return; // not signed in yet
+  if(_cloudSaveInFlight) { _cloudSaveQueued = true; return; }
+  _cloudSaveInFlight = true;
+  var chunkCount = Math.max(1, Math.ceil(ALL_EMP.length / CLOUD_CHUNK_SIZE));
+  var batch = fbDb.batch();
+  var col = fbDb.collection('dashboardData');
+  for(var i = 0; i < chunkCount; i++) {
+    var chunk = ALL_EMP.slice(i*CLOUD_CHUNK_SIZE, (i+1)*CLOUD_CHUNK_SIZE);
+    batch.set(col.doc('employees_'+i), { chunk: chunk });
+  }
+  batch.set(col.doc('meta'), { employeeChunkCount: chunkCount, savedAt: new Date().toISOString() });
+  batch.set(col.doc('allocations'), { records: mgrAllocs });
+  batch.set(col.doc('requests'), { records: pendingRequests });
+  batch.set(col.doc('separations'), { records: sepList });
+  batch.set(col.doc('changelog'), { records: changeLog });
+  batch.set(col.doc('notes'), { records: adminNotes });
+  batch.commit().then(function() {
+    _cloudSaveInFlight = false;
+    if(_cloudSaveQueued) { _cloudSaveQueued = false; saveCloudState(); }
+  }).catch(function(err) {
+    _cloudSaveInFlight = false;
+    console.warn('Cloud save failed:', err);
+    if(!_cloudWarned) { _cloudWarned = true; alert('Could not sync your changes to the cloud (' + err.message + '). They are saved locally on this device only for now.'); }
+  });
+}
+function loadCloudState() {
+  fbDb.collection('dashboardData').get().then(function(snap) {
+    if(snap.empty) {
+      // First time anyone has signed in — seed Firestore with this device's current data
+      saveCloudState();
+      return;
+    }
+    var docs = {};
+    snap.forEach(function(doc) { docs[doc.id] = doc.data(); });
+    var chunkCount = docs.meta ? docs.meta.employeeChunkCount : 0;
+    var employees = [];
+    for(var i = 0; i < chunkCount; i++) {
+      var chunkDoc = docs['employees_'+i];
+      if(chunkDoc && chunkDoc.chunk) employees = employees.concat(chunkDoc.chunk);
+    }
+    if(employees.length > 0) ALL_EMP = employees;
+    mgrAllocs = (docs.allocations && docs.allocations.records) || [];
+    pendingRequests = (docs.requests && docs.requests.records) || [];
+    sepList = (docs.separations && docs.separations.records) || [];
+    changeLog = (docs.changelog && docs.changelog.records) || [];
+    adminNotes = (docs.notes && docs.notes.records) || [];
+    _savedSnapshot = { savedAt: docs.meta ? docs.meta.savedAt : null };
+    refreshAllTabsAfterUpload();
+  }).catch(function(err) {
+    console.warn('Could not load cloud data, using local/embedded data instead:', err);
+  });
+}
 
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
@@ -2113,11 +2127,12 @@ function renderMgrPages() {
 
 /* ===== REQUEST TAB ===== */
 function initRequest() {
-  if(reqReady) return;
   reqReady = true;
   ['reqAff','aCo'].forEach(populateAffSelect);
   var yrSel = document.getElementById('reqYear');
-  for(var y = 2026; y >= 2006; y--) { var o = document.createElement('option'); o.value = y; o.textContent = y; yrSel.appendChild(o); }
+  if(yrSel.options.length <= 1) {
+    for(var y = 2026; y >= 2006; y--) { var o = document.createElement('option'); o.value = y; o.textContent = y; yrSel.appendChild(o); }
+  }
   reqFilter();
 }
 function reqSearchInput() {
@@ -4765,22 +4780,20 @@ function polRemovePdf() {
 }
 
 
-/* ===== LOGIN / ACCESS CONTROL ===== */
+/* ===== LOGIN / ACCESS CONTROL (Firebase Auth — single admin account) ===== */
 var currentRole = null;
-var pendingCredRole = null;
 
-var CREDENTIALS_MAP = {
-  admin: { user: 'admin',  pass: 'admin123' },
-  pgbhr: { user: 'pgbhr', pass: 'pgbhr123'  }
+var firebaseConfig = {
+  apiKey: "AIzaSyDHTb2p5fPw0Se0bArixGOaQ0jbbIA_vyQ",
+  authDomain: "pgb-benefits-dashboard.firebaseapp.com",
+  projectId: "pgb-benefits-dashboard",
+  storageBucket: "pgb-benefits-dashboard.firebasestorage.app",
+  messagingSenderId: "424525888899",
+  appId: "1:424525888899:web:1c3b9a3a912ccb4ce48ab6"
 };
-
-var ROLE_LABELS = { admin:'Admin', hrsvp:'HR SVP', pgbhr:'PGB HR' };
-
-var ROLE_ICON_HTML = {
-  admin: '<div style="width:38px;height:38px;border-radius:10px;background:rgba(201,168,76,.18);display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>',
-  pgbhr: '<div style="width:38px;height:38px;border-radius:10px;background:rgba(29,158,117,.15);display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD9A0" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg></div>'
-};
-var ROLE_TITLE_COLOR = { admin:'#C9A84C', pgbhr:'#3DD9A0' };
+firebase.initializeApp(firebaseConfig);
+var fbAuth = firebase.auth();
+var fbDb = firebase.firestore();
 
 function enterAs(role) {
   currentRole = role;
@@ -4788,8 +4801,8 @@ function enterAs(role) {
   document.getElementById('mainHeader').style.display = '';
   document.getElementById('mainContent').style.display = '';
   var badge = document.getElementById('headerRoleBadge');
-  badge.textContent = ROLE_LABELS[role]||role;
-  badge.className = 'header-role role-' + role;
+  badge.textContent = 'Admin';
+  badge.className = 'header-role role-admin';
   badge.style.display = '';
   var signOut = document.getElementById('signOutBtn');
   if(signOut) signOut.style.display = '';
@@ -4798,65 +4811,47 @@ function enterAs(role) {
   if(dashBtn) showPage('dashboard', dashBtn);
 }
 
-function showRoleLogin(role) {
-  pendingCredRole = role;
-  document.getElementById('loginRoleScreen').style.display = 'none';
-  document.getElementById('loginCredScreen').style.display = 'block';
-  document.getElementById('loginSub').textContent = ROLE_LABELS[role] + ' Login';
-  document.getElementById('credRoleIcon').innerHTML = ROLE_ICON_HTML[role]||'';
-  document.getElementById('credRoleTitle').textContent = ROLE_LABELS[role];
-  document.getElementById('credRoleTitle').style.color = ROLE_TITLE_COLOR[role]||'#fff';
-  document.getElementById('credUser').value = '';
-  document.getElementById('credPass').value = '';
-  document.getElementById('credError').classList.remove('show');
-  document.getElementById('credUser').focus();
-}
-
-function backToRoles() {
-  document.getElementById('loginRoleScreen').style.display = 'flex';
-  document.getElementById('loginCredScreen').style.display = 'none';
-  document.getElementById('loginSub').textContent = 'Select your access level to continue';
-  pendingCredRole = null;
-}
-
 function doCredLogin() {
-  if(!pendingCredRole) return;
-  var user  = document.getElementById('credUser').value.trim();
+  var email = document.getElementById('credUser').value.trim();
   var pass  = document.getElementById('credPass').value;
   var errEl = document.getElementById('credError');
+  var btn   = document.getElementById('credSubmitBtn');
   errEl.classList.remove('show');
-  var cred = CREDENTIALS_MAP[pendingCredRole];
-  if(cred && user.toLowerCase() === cred.user.toLowerCase() && pass === cred.pass) {
-    enterAs(pendingCredRole);
-  } else {
+  if(!email || !pass) {
+    errEl.textContent = 'Enter your email and password.';
+    errEl.classList.add('show');
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  fbAuth.signInWithEmailAndPassword(email, pass).catch(function() {
+    errEl.textContent = 'Incorrect email or password.';
     errEl.classList.add('show');
     document.getElementById('credPass').value = '';
     document.getElementById('credPass').focus();
-  }
+  }).then(function() {
+    btn.disabled = false; btn.textContent = 'Sign In';
+  });
 }
 
 function doSignOut() {
+  fbAuth.signOut();
   currentRole = null;
   document.getElementById('mainHeader').style.display = 'none';
   document.getElementById('mainContent').style.display = 'none';
   document.getElementById('loginOverlay').style.display = '';
   document.getElementById('signOutBtn').style.display = 'none';
   document.getElementById('headerRoleBadge').style.display = 'none';
-  backToRoles();
-  var manageBtn = document.querySelector('.nav-btn[onclick*="manage"]');
-  if(manageBtn) manageBtn.style.display = '';
+  document.getElementById('credUser').value = '';
+  document.getElementById('credPass').value = '';
+  document.getElementById('credError').classList.remove('show');
 }
 
 function applyRoleRestrictions(role) {
+  // Single-admin dashboard: Manage and Request are always available once signed in.
   var manageBtn = document.querySelector('.nav-btn[onclick*="manage"]');
   var requestBtn = document.querySelector('.nav-btn[onclick*="request"]');
-  if(role === 'hrsvp' || role === 'pgbhr') {
-    if(manageBtn) manageBtn.style.display = 'none';
-    if(requestBtn) requestBtn.style.display = 'none';
-  } else {
-    if(manageBtn) manageBtn.style.display = '';
-    if(requestBtn) requestBtn.style.display = '';
-  }
+  if(manageBtn) manageBtn.style.display = '';
+  if(requestBtn) requestBtn.style.display = '';
 }
 
 var _origShowPage = showPage;
@@ -4864,6 +4859,15 @@ showPage = function(id, btn) {
   if((id === 'manage' || id === 'request') && currentRole !== 'admin') return;
   _origShowPage(id, btn);
 };
+
+// Firebase keeps the session across reloads/devices — this fires immediately with
+// the restored session (if any) or null, and again on every sign-in/out.
+fbAuth.onAuthStateChanged(function(user) {
+  if(user) {
+    enterAs('admin');
+    loadCloudState();
+  }
+});
 
 
 /* ── Employee Popup ── */
