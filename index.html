@@ -897,7 +897,7 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
   </div>
 
   <!-- Upload section -->
-  <div class="rpt-section">
+  <div class="rpt-section" id="uploadDataSection">
     <div class="rpt-section-title">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Upload New Data
@@ -5001,14 +5001,20 @@ function doSignOut() {
 function applyRoleRestrictions(role) {
   var manageBtn = document.querySelector('.nav-btn[onclick*="manage"]');
   var requestBtn = document.querySelector('.nav-btn[onclick*="request"]');
+  var policyBtn = document.querySelector('.nav-btn[onclick*="policy"]');
+  var uploadSection = document.getElementById('uploadDataSection');
   var show = role === 'admin' ? '' : 'none';
   if(manageBtn) manageBtn.style.display = show;
   if(requestBtn) requestBtn.style.display = show;
+  var hrUserShow = role === 'hruser' ? 'none' : '';
+  if(policyBtn) policyBtn.style.display = hrUserShow;
+  if(uploadSection) uploadSection.style.display = hrUserShow;
 }
 
 var _origShowPage = showPage;
 showPage = function(id, btn) {
   if((id === 'manage' || id === 'request') && currentRole !== 'admin') return;
+  if(id === 'policy' && currentRole === 'hruser') return;
   _origShowPage(id, btn);
 };
 
