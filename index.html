@@ -1415,7 +1415,7 @@ function saveCloudState() {
   });
 }
 function loadCloudState() {
-  fbDb.collection('dashboardData').get().then(function(snap) {
+  return fbDb.collection('dashboardData').get().then(function(snap) {
     if(snap.empty) {
       // First time anyone has signed in — seed Firestore with this device's current data
       saveCloudState();
@@ -4918,6 +4918,8 @@ function backToRoles() {
   document.getElementById('loginSub').textContent = 'Select your access level to continue';
 }
 
+var _explicitSignIn = false;
+
 function doCredLogin() {
   var user  = document.getElementById('credUser').value.trim();
   var pass  = document.getElementById('credPass').value;
@@ -4930,9 +4932,11 @@ function doCredLogin() {
     return;
   }
   btn.disabled = true; btn.textContent = 'Signing in...';
+  _explicitSignIn = true;
   fbAuth.signInWithEmailAndPassword(ADMIN_EMAIL, pass).then(function() {
     currentUserLabel = 'Admin';
   }).catch(function() {
+    _explicitSignIn = false;
     errEl.textContent = 'Incorrect username or password.';
     errEl.classList.add('show');
     document.getElementById('credPass').value = '';
@@ -4946,7 +4950,10 @@ function enterAsSVP() {
   fbAuth.signInAnonymously().then(function() {
     currentUserLabel = 'SVP HR';
     enterAs('hrsvp');
-    loadCloudState();
+    return loadCloudState();
+  }).then(function() {
+    addChangeLog('Login', '—', 'SVP HR', 'Signed in');
+    saveLocalState();
   }).catch(function(err) {
     alert('Could not sign in (' + err.message + '). Please try again.');
   });
@@ -4967,7 +4974,10 @@ function doHrUserLogin() {
   fbAuth.signInAnonymously().then(function() {
     currentUserLabel = name;
     enterAs('hruser');
-    loadCloudState();
+    return loadCloudState();
+  }).then(function() {
+    addChangeLog('Login', '—', 'HR User', 'Signed in as ' + name);
+    saveLocalState();
   }).catch(function(err) {
     errEl.textContent = 'Could not sign in (' + err.message + ').';
     errEl.classList.add('show');
@@ -5008,7 +5018,14 @@ fbAuth.onAuthStateChanged(function(user) {
   if(user && !user.isAnonymous) {
     currentUserLabel = 'Admin';
     enterAs('admin');
-    loadCloudState();
+    var wasExplicit = _explicitSignIn;
+    _explicitSignIn = false;
+    loadCloudState().then(function() {
+      if(wasExplicit) {
+        addChangeLog('Login', '—', 'Admin', 'Signed in');
+        saveLocalState();
+      }
+    });
   }
 });
 
