@@ -73,7 +73,7 @@ body{background:var(--navy);color:var(--white);font-family:'Segoe UI',system-ui,
 .type-pill-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .type-pill-cnt{font-weight:700;}
 .type-pill-pct{color:var(--muted);font-size:10px;}
-.detail-charts{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;}
+.detail-charts{display:grid;grid-template-columns:1fr;gap:14px;}
 .chart-box{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius-sm);padding:16px;}
 /* Charts */
 .charts-row{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:16px;}
@@ -650,8 +650,7 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
     </div>
     <div class="type-pills" id="dPills"></div>
     <div class="detail-charts">
-      <div class="chart-box"><div class="sec" style="margin-bottom:8px">Benefit type breakdown</div><div class="chart-wrap" style="height:190px"><canvas id="dBar"></canvas></div></div>
-      <div class="chart-box"><div class="sec" style="margin-bottom:8px">Distribution</div><div class="chart-wrap" style="height:190px"><canvas id="dPie"></canvas></div></div>
+      <div class="chart-box"><div class="sec" style="margin-bottom:8px">Benefit availments by type</div><div class="chart-wrap" style="height:220px"><canvas id="dBar"></canvas></div></div>
     </div>
   </div>
   <!-- Management & Staff Charts -->
@@ -1336,7 +1335,7 @@ function showPage(id,btn){
 }
 
 /* ===== DASHBOARD ===== */
-var activeAff=null,dBarInst=null,dPieInst=null;
+var activeAff=null,dBarInst=null;
 
 function buildAffGrid(){
   var g=document.getElementById('affGrid');
@@ -1435,11 +1434,9 @@ function openAff(co, mode){
   panel.classList.add('open');
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
   if(dBarInst){dBarInst.destroy();dBarInst=null;}
-  if(dPieInst){dPieInst.destroy();dPieInst=null;}
   var labels=Object.keys(d.types), counts=Object.values(d.types), colors=labels.map(function(l){return BEN_COLORS[l]||'#888';});
   var gl='rgba(255,255,255,.05)';
   dBarInst=new Chart(document.getElementById('dBar').getContext('2d'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:colors,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+' records ('+Math.round(c.raw/d.total*100)+'%)';}}}},scales:{x:{ticks:{color:'#8A9BB5',font:{size:10}},grid:{color:gl},border:{color:'transparent'}},y:{ticks:{color:'#8A9BB5',font:{size:10}},grid:{color:gl},border:{color:'transparent'}}}}});
-  dPieInst=new Chart(document.getElementById('dPie').getContext('2d'),{type:'doughnut',data:{labels:labels,datasets:[{data:counts,backgroundColor:colors,borderWidth:1,borderColor:'rgba(0,0,0,.3)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'54%',plugins:{legend:{display:true,position:'right',labels:{color:'#8A9BB5',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw+' ('+Math.round(c.raw/d.total*100)+'%)';}}}}}}); 
 }
 
 function closeAff(){
@@ -1447,7 +1444,6 @@ function closeAff(){
   document.getElementById('affDetail').classList.remove('open');
   document.querySelectorAll('.aff-card').forEach(function(c){c.classList.remove('active');});
   if(dBarInst){dBarInst.destroy();dBarInst=null;}
-  if(dPieInst){dPieInst.destroy();dPieInst=null;}
 }
 
 var mainBarInst=null, mainPieInst=null, mainTrendInst=null;
