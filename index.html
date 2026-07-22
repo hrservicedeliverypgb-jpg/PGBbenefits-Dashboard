@@ -3671,7 +3671,6 @@ function applyNewPGBList(rows, fname) {
     console.log('[PGB Upload] Sample IDs:', ALL_EMP.slice(0,3).map(function(e){return e.id;}));
 
     addChangeLog('Upload', '—', '—', 'Employee list uploaded: ' + fname + ' (' + newEmp.length.toLocaleString() + ' employees)');
-    saveLocalState();
 
     // Refresh all tabs comprehensively
     refreshAllTabsAfterUpload();
@@ -3766,7 +3765,6 @@ function applyNewBenefits(rows, fname) {
     updateDataBanner();
 
     addChangeLog('Upload', '—', '—', 'Benefits summary uploaded: ' + fname + ' (' + benCount.toLocaleString() + ' records)');
-    saveLocalState();
 
     // Refresh all tabs comprehensively
     refreshAllTabsAfterUpload();
