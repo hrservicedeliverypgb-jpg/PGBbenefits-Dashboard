@@ -1308,29 +1308,47 @@ function clearLocalState() {
 if(_savedSnapshot && _savedSnapshot.ALL_EMP) ALL_EMP = _savedSnapshot.ALL_EMP;
 
 /* ── Cloud sync (Firestore) — shares data across every signed-in device ── */
-var CLOUD_CHUNK_SIZE = 1000;
+var CLOUD_CHUNK_SIZE = 800;
 var _cloudSaveInFlight = false;
 var _cloudSaveQueued = false;
 var _cloudWarned = false;
+function writeChunked(batch, col, prefix, arr, prevChunkCount) {
+  var chunkCount = Math.max(1, Math.ceil(arr.length / CLOUD_CHUNK_SIZE));
+  for(var i = 0; i < chunkCount; i++) {
+    batch.set(col.doc(prefix+'_'+i), { chunk: arr.slice(i*CLOUD_CHUNK_SIZE, (i+1)*CLOUD_CHUNK_SIZE) });
+  }
+  // Remove any leftover chunk docs from a previous, larger save
+  for(var j = chunkCount; j < (prevChunkCount||0); j++) {
+    batch.delete(col.doc(prefix+'_'+j));
+  }
+  return chunkCount;
+}
+function readChunked(docs, prefix, chunkCount) {
+  var out = [];
+  for(var i = 0; i < chunkCount; i++) {
+    var d = docs[prefix+'_'+i];
+    if(d && d.chunk) out = out.concat(d.chunk);
+  }
+  return out;
+}
 function saveCloudState() {
   if(typeof fbAuth === 'undefined' || !fbAuth.currentUser) return; // not signed in yet
   if(_cloudSaveInFlight) { _cloudSaveQueued = true; return; }
   _cloudSaveInFlight = true;
-  var chunkCount = Math.max(1, Math.ceil(ALL_EMP.length / CLOUD_CHUNK_SIZE));
-  var batch = fbDb.batch();
   var col = fbDb.collection('dashboardData');
-  for(var i = 0; i < chunkCount; i++) {
-    var chunk = ALL_EMP.slice(i*CLOUD_CHUNK_SIZE, (i+1)*CLOUD_CHUNK_SIZE);
-    batch.set(col.doc('employees_'+i), { chunk: chunk });
-  }
-  batch.set(col.doc('meta'), { employeeChunkCount: chunkCount, savedAt: new Date().toISOString() });
-  batch.set(col.doc('allocations'), { records: mgrAllocs });
+  var prevMeta = (_savedSnapshot && _savedSnapshot.meta) || {};
+  var batch = fbDb.batch();
+  var empChunkCount = writeChunked(batch, col, 'employees', ALL_EMP, prevMeta.employeeChunkCount);
+  var allocChunkCount = writeChunked(batch, col, 'allocations', mgrAllocs, prevMeta.allocationChunkCount);
+  var meta = { employeeChunkCount: empChunkCount, allocationChunkCount: allocChunkCount, savedAt: new Date().toISOString() };
+  batch.set(col.doc('meta'), meta);
   batch.set(col.doc('requests'), { records: pendingRequests });
   batch.set(col.doc('separations'), { records: sepList });
   batch.set(col.doc('changelog'), { records: changeLog });
   batch.set(col.doc('notes'), { records: adminNotes });
   batch.commit().then(function() {
     _cloudSaveInFlight = false;
+    _savedSnapshot = { meta: meta };
     if(_cloudSaveQueued) { _cloudSaveQueued = false; saveCloudState(); }
   }).catch(function(err) {
     _cloudSaveInFlight = false;
@@ -1347,19 +1365,15 @@ function loadCloudState() {
     }
     var docs = {};
     snap.forEach(function(doc) { docs[doc.id] = doc.data(); });
-    var chunkCount = docs.meta ? docs.meta.employeeChunkCount : 0;
-    var employees = [];
-    for(var i = 0; i < chunkCount; i++) {
-      var chunkDoc = docs['employees_'+i];
-      if(chunkDoc && chunkDoc.chunk) employees = employees.concat(chunkDoc.chunk);
-    }
+    var meta = docs.meta || {};
+    var employees = readChunked(docs, 'employees', meta.employeeChunkCount || 0);
     if(employees.length > 0) ALL_EMP = employees;
-    mgrAllocs = (docs.allocations && docs.allocations.records) || [];
+    mgrAllocs = readChunked(docs, 'allocations', meta.allocationChunkCount || 0);
     pendingRequests = (docs.requests && docs.requests.records) || [];
     sepList = (docs.separations && docs.separations.records) || [];
     changeLog = (docs.changelog && docs.changelog.records) || [];
     adminNotes = (docs.notes && docs.notes.records) || [];
-    _savedSnapshot = { savedAt: docs.meta ? docs.meta.savedAt : null };
+    _savedSnapshot = { savedAt: meta.savedAt, meta: meta };
     refreshAllTabsAfterUpload();
   }).catch(function(err) {
     console.warn('Could not load cloud data, using local/embedded data instead:', err);
