@@ -1912,6 +1912,15 @@ function showMgrTab(id, btn) {
   document.getElementById('mgr-'+id).classList.add('active');
 }
 
+var AFFILIATE_LIST = ['PSC','PHI','PPC','CSI','PTMSI','CSPIC','MAAYO','THAM','ABC','AMICI','SKILLS','PSEFI','PSI','SLM','AC','MC123','RDC'];
+function populateAffSelect(selId) {
+  var sel = document.getElementById(selId);
+  if(!sel || sel.options.length > 1) return;
+  AFFILIATE_LIST.forEach(function(a) {
+    var o = document.createElement('option'); o.value = a; o.textContent = a; sel.appendChild(o);
+  });
+}
+
 function initManage() {
   if(mgrAllocs.length > 0) return; // already init
   // Build flat alloc list from EMP_WITH_BENS and stamp _allocIdx on ALL_EMP bens
@@ -1944,14 +1953,7 @@ function initManage() {
   });
 
   // Populate affiliate dropdowns
-  var affs = ['PSC','PHI','PPC','CSI','PTMSI','CSPIC','MAAYO','THAM','ABC','AMICI','SKILLS','PSEFI','PSI','SLM','AC','MC123','RDC'];
-  ['mgrAff','sepAff','aCo'].forEach(function(selId) {
-    var sel = document.getElementById(selId);
-    if(!sel) return;
-    affs.forEach(function(a) {
-      var o = document.createElement('option'); o.value = a; o.textContent = a; sel.appendChild(o);
-    });
-  });
+  ['mgrAff','sepAff','aCo'].forEach(populateAffSelect);
 
   // Populate year dropdown
   var yrSel = document.getElementById('mgrYear');
@@ -2083,9 +2085,7 @@ function renderMgrPages() {
 function initRequest() {
   if(reqReady) return;
   reqReady = true;
-  var affs = ['PSC','PHI','PPC','CSI','PTMSI','CSPIC','MAAYO','THAM','ABC','AMICI','SKILLS','PSEFI','PSI','SLM','AC','MC123','RDC'];
-  var sel = document.getElementById('reqAff');
-  affs.forEach(function(a){ var o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); });
+  ['reqAff','aCo'].forEach(populateAffSelect);
   var yrSel = document.getElementById('reqYear');
   for(var y = 2026; y >= 2006; y--) { var o = document.createElement('option'); o.value = y; o.textContent = y; yrSel.appendChild(o); }
   reqFilter();
@@ -2239,7 +2239,7 @@ function setAllocModalDateFieldsVisible(show) {
   });
 }
 function clearAllocForm() {
-  ['aId','aNm','aEmpSearch','aYr','aRmk','aDept','aPos','aTAT'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['aId','aNm','aEmpSearch','aYr','aRmk','aDept','aPos','aHire','aTAT'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   var dd=document.getElementById('aEmpDropdown');if(dd)dd.style.display='none';
   ['aEE','aER','aTt'].forEach(function(id){document.getElementById(id).value='0';});
   ['aReq','aDa','aDr'].forEach(function(id){document.getElementById(id).value='';});
@@ -2252,6 +2252,7 @@ function populateAllocForm(r) {
   document.getElementById('aEmpSearch').value = r.nm + ' (' + r.id + ')';
   document.getElementById('aDept').value = r.dept || '';
   document.getElementById('aPos').value = r.pos || '';
+  document.getElementById('aHire').value = r.hire || '';
   document.getElementById('aCo').value = r.co;
   document.getElementById('aBen').value = r.ben;
   document.getElementById('aYr').value = r.yr || '';
@@ -2320,6 +2321,7 @@ function saveAlloc() {
     co: document.getElementById('aCo').value,
     pos: document.getElementById('aPos').value.trim(),
     dept: document.getElementById('aDept').value.trim(),
+    hire: document.getElementById('aHire').value.trim(),
     ben: document.getElementById('aBen').value,
     yr: parseInt(document.getElementById('aYr').value)||null,
     ee: parseFloat(document.getElementById('aEE').value)||0,
@@ -2409,7 +2411,7 @@ function deleteAlloc(idx) {
 
 function printAllocForm() {
   var g = function(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; };
-  var id=g('aId'), nm=g('aNm'), co=g('aCo'), dept=g('aDept'), pos=g('aPos'), ben=g('aBen');
+  var id=g('aId'), nm=g('aNm'), co=g('aCo'), dept=g('aDept'), pos=g('aPos'), hire=g('aHire'), ben=g('aBen');
   if(!id || !nm || !ben) { alert('Fill in Employee, and Benefit Type before printing the form.'); return; }
   var yr=g('aYr'), ee=g('aEE'), er=g('aER'), tt=g('aTt');
   var req=g('aReq'), rmk=g('aRmk');
@@ -2437,7 +2439,7 @@ function printAllocForm() {
     + '<h1>PGB Benefits Dashboard</h1>'
     + '<div class="sub">Benefit Allocation Request Form</div>'
     + '<div class="section-title">Employee Information</div>'
-    + row('Employee ID', id) + row('Employee Name', nm) + row('Affiliate / Company', co) + row('Department', dept) + row('Position', pos)
+    + row('Employee ID', id) + row('Employee Name', nm) + row('Affiliate / Company', co) + row('Department', dept) + row('Position', pos) + row('Date Hired', hire)
     + '<div class="section-title">Benefit Details</div>'
     + row('Benefit Type', ben) + row('Year Acquired', yr)
     + '<div class="section-title">Financial Breakdown</div>'
@@ -2951,6 +2953,7 @@ function selectAllocEmp(e) {
   document.getElementById('aCo').value = e.affiliate || '';
   document.getElementById('aDept').value = e.dept || '';
   document.getElementById('aPos').value = e.pos || '';
+  document.getElementById('aHire').value = e.hire || '';
   document.getElementById('aEmpSearch').value = e.name + ' (' + e.id + ')';
   document.getElementById('aEmpDropdown').style.display = 'none';
 }
@@ -5062,6 +5065,10 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="form-group">
         <label class="form-label">Position <span style="color:var(--muted);font-weight:400;text-transform:none">(auto-filled)</span></label>
         <input class="form-input" id="aPos" placeholder="Auto-filled" readonly style="background:rgba(0,0,0,.2);color:var(--muted)"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date Hired <span style="color:var(--muted);font-weight:400;text-transform:none">(auto-filled)</span></label>
+        <input class="form-input" id="aHire" placeholder="Auto-filled" readonly style="background:rgba(0,0,0,.2);color:var(--muted)"/>
       </div>
       <div class="form-group">
         <label class="form-label">Benefit Type</label>
