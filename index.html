@@ -353,6 +353,10 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
 .an-legend-lbl{flex:1;color:var(--white);}
 .an-legend-cnt{color:var(--muted);}
 .an-legend-pct{color:var(--muted2);font-size:10px;min-width:32px;text-align:right;}
+/* Per-chart "why" caption */
+.an-chart-why{font-size:11px;line-height:1.55;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);}
+.an-chart-why b{color:var(--gold);font-weight:700;}
+.an-chart-why span.why-lbl{color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:9px;margin-right:5px;}
 /* Top table */
 .an-top-table{width:100%;border-collapse:collapse;font-size:12px;}
 .an-top-table tr{border-bottom:1px solid var(--border);}
@@ -1050,11 +1054,13 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
           <div class="an-chart-wrap" style="height:220px"><canvas id="anTypePie"></canvas></div>
           <div class="an-legend" id="anTypeLegend"></div>
         </div>
+        <div class="an-chart-why" id="anTypePieWhy"></div>
       </div>
 
       <div class="an-card">
         <div class="an-card-title">Amount by Benefit Type (&#8369;)</div>
         <div class="an-chart-wrap" style="height:260px"><canvas id="anTypeAmtBar"></canvas></div>
+        <div class="an-chart-why" id="anTypeAmtBarWhy"></div>
       </div>
 
     </div>
@@ -1080,11 +1086,13 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
             </div>
           </div>
         </div>
+        <div class="an-chart-why" id="anSharePieWhy"></div>
       </div>
 
       <div class="an-card">
         <div class="an-card-title">Annual Availment Trend</div>
         <div class="an-chart-wrap" style="height:200px"><canvas id="anTrendLine"></canvas></div>
+        <div class="an-chart-why" id="anTrendLineWhy"></div>
       </div>
 
     </div>
@@ -1138,6 +1146,7 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
         <div class="an-card-title">By Level</div>
         <div class="an-chart-wrap" style="height:200px"><canvas id="anLevelPie"></canvas></div>
         <div class="an-legend" id="anLevelLegend"></div>
+        <div class="an-chart-why" id="anLevelPieWhy"></div>
       </div>
 
       <!-- Gender split -->
@@ -1154,6 +1163,7 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
             <div class="an-stat-pill-value" style="color:var(--pink)">1,346</div>
           </div>
         </div>
+        <div class="an-chart-why" id="anGenderPieWhy"></div>
       </div>
 
       <!-- Employment status -->
@@ -1161,6 +1171,7 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
         <div class="an-card-title">By Employment Status</div>
         <div class="an-chart-wrap" style="height:200px"><canvas id="anStatusPie"></canvas></div>
         <div class="an-legend" id="anStatusLegend"></div>
+        <div class="an-chart-why" id="anStatusPieWhy"></div>
       </div>
 
     </div>
@@ -1174,11 +1185,13 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
       <div class="an-card">
         <div class="an-card-title">Headcount per Affiliate</div>
         <div class="an-chart-wrap" style="height:260px"><canvas id="anAffBar"></canvas></div>
+        <div class="an-chart-why" id="anAffBarWhy"></div>
       </div>
 
       <div class="an-card">
         <div class="an-card-title">Benefit Records per Affiliate</div>
         <div class="an-chart-wrap" style="height:260px"><canvas id="anAffBenBar"></canvas></div>
+        <div class="an-chart-why" id="anAffBenBarWhy"></div>
       </div>
 
     </div>
@@ -1253,10 +1266,12 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
           <div class="an-chart-wrap" style="height:220px"><canvas id="anRnkTypePie"></canvas></div>
           <div class="an-legend" id="anRnkTypeLegend"></div>
         </div>
+        <div class="an-chart-why" id="anRnkTypePieWhy"></div>
       </div>
       <div class="an-card">
         <div class="an-card-title">Amount by Benefit Type — Ranks (&#8369;)</div>
         <div class="an-chart-wrap" style="height:260px"><canvas id="anRnkTypeAmtBar"></canvas></div>
+        <div class="an-chart-why" id="anRnkTypeAmtBarWhy"></div>
       </div>
     </div>
     <div class="an-grid-2">
@@ -1266,10 +1281,12 @@ tbody tr:not(.emp-open-row).data-any:hover{background:rgba(255,255,255,.035);}
           <div class="an-chart-wrap" style="height:200px"><canvas id="anRnkSharePie"></canvas></div>
           <div id="anRnkShareCards"></div>
         </div>
+        <div class="an-chart-why" id="anRnkSharePieWhy"></div>
       </div>
       <div class="an-card">
         <div class="an-card-title">Annual Availment Trend — Ranks</div>
         <div class="an-chart-wrap" style="height:200px"><canvas id="anRnkTrendLine"></canvas></div>
+        <div class="an-chart-why" id="anRnkTrendLineWhy"></div>
       </div>
     </div>
   </div>
@@ -4007,6 +4024,9 @@ function buildAnalytics() {
     var pct=Math.round(pair[1]/totalEmp*100);
     lvlLegEl.innerHTML += '<div class="an-legend-item"><div class="an-legend-dot" style="background:'+lvlColors[i]+'"></div><span class="an-legend-lbl">'+pair[0]+'</span><span class="an-legend-cnt">'+pair[1].toLocaleString()+'</span><span class="an-legend-pct">'+pct+'%</span></div>';
   });
+  var lvlTop = lvlEntries[0]||['—',0];
+  var lvlTopPct = totalEmp>0 ? Math.round(lvlTop[1]/totalEmp*100) : 0;
+  setHTML('anLevelPieWhy', '<span class="why-lbl">Why</span>Workforce structure is naturally a pyramid — line and support roles always outnumber management seats. <b>'+lvlTop[0]+'</b> is the largest group at <b>'+lvlTopPct+'%</b> of the '+totalEmp.toLocaleString()+' total headcount, which tracks how few EXE/Manager positions exist relative to Staff/Supervisor roles.');
 
   // Gender pie
   destroyChartOn('anGenderPie');
@@ -4017,6 +4037,10 @@ function buildAnalytics() {
       tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw.toLocaleString();}}}}
     }
   });
+  var gTotalAll = gMap.M+gMap.F+gMap.Other;
+  var gMaxLbl = gMap.M>=gMap.F ? 'Male' : 'Female';
+  var gMaxPct = gTotalAll>0 ? Math.round(Math.max(gMap.M,gMap.F)/gTotalAll*100) : 0;
+  setHTML('anGenderPieWhy', '<span class="why-lbl">Why</span><b>'+gMaxLbl+'</b> employees make up <b>'+gMaxPct+'%</b> of Mgmt &amp; Staff ('+gMap.M.toLocaleString()+' male vs '+gMap.F.toLocaleString()+' female) — this mirrors the gender mix of who was hired into these roles historically, not any difference in benefit eligibility.');
 
   // Status pie
   var statEntries = Object.entries(statMap).sort(function(a,b){return b[1]-a[1];});
@@ -4037,6 +4061,10 @@ function buildAnalytics() {
     var pct=Math.round(pair[1]/totalEmp*100);
     statLegEl.innerHTML += '<div class="an-legend-item"><div class="an-legend-dot" style="background:'+statColors[i]+'"></div><span class="an-legend-lbl">'+(STAT_LBL[pair[0]]||pair[0])+'</span><span class="an-legend-cnt">'+pair[1].toLocaleString()+'</span><span class="an-legend-pct">'+pct+'%</span></div>';
   });
+  var statTop = statEntries[0]||['—',0];
+  var statTopLbl = STAT_LBL[statTop[0]]||statTop[0];
+  var statTopPct = MGMT_EMP.length>0 ? Math.round(statTop[1]/MGMT_EMP.length*100) : 0;
+  setHTML('anStatusPieWhy', '<span class="why-lbl">Why</span><b>'+statTopLbl+'</b> dominates at <b>'+statTopPct+'%</b> because it is the steady-state status every employee reaches after passing probation — only newly onboarded or contract-based hires remain in the other categories at any given time.');
 
   // Affiliate headcount bar
   var affList = Object.entries(affEmp).sort(function(a,b){return b[1]-a[1];});
@@ -4052,6 +4080,9 @@ function buildAnalytics() {
               y:{ticks:{color:tc,font:{size:10}},grid:{color:gl},border:{color:'transparent'}}}
     }
   });
+  var affTop = affList[0]||['—',0];
+  var affTopPct = MGMT_EMP.length>0 ? Math.round(affTop[1]/MGMT_EMP.length*100) : 0;
+  setHTML('anAffBarWhy', '<span class="why-lbl">Why</span><b>'+affTop[0]+'</b> has the largest headcount ('+affTop[1].toLocaleString()+' employees, '+affTopPct+'% of Mgmt &amp; Staff), simply reflecting its size as the biggest operating entity — larger affiliates naturally carry more of the group\'s total staffing.');
 
   // Affiliate benefit records bar
   var affBenList = Object.entries(affBenRec).sort(function(a,b){return b[1]-a[1];});
@@ -4067,6 +4098,8 @@ function buildAnalytics() {
               y:{ticks:{color:tc,font:{size:10}},grid:{color:gl},border:{color:'transparent'}}}
     }
   });
+  var affBenTop = affBenList[0]||['—',0];
+  setHTML('anAffBenBarWhy', '<span class="why-lbl">Why</span>Benefit records per affiliate largely track headcount — <b>'+affBenTop[0]+'</b> leads with <b>'+affBenTop[1].toLocaleString()+' records</b> mainly because it has more eligible employees generating transactions, not necessarily a higher benefit rate per person. Compare against the utilization rates below for the actual per-employee picture.');
 
   // Utilization horizontal bars
   var utilEl = document.getElementById('anUtilBars');
@@ -4106,6 +4139,9 @@ function buildAnalytics() {
     var pct=Math.round(pair[1]/totalBenRecs*100);
     typeLegEl.innerHTML += '<div class="an-legend-item"><div class="an-legend-dot" style="background:'+typeColors[i]+'"></div><span class="an-legend-lbl">'+pair[0]+'</span><span class="an-legend-cnt">'+pair[1]+'</span><span class="an-legend-pct">'+pct+'%</span></div>';
   });
+  var typeTop = typeList[0]||['—',0];
+  var typeTopPct = totalBenRecs>0 ? Math.round(typeTop[1]/totalBenRecs*100) : 0;
+  setHTML('anTypePieWhy', '<span class="why-lbl">Why</span><b>'+typeTop[0]+'</b> is availed most often (<b>'+typeTopPct+'%</b> of all '+totalBenRecs.toLocaleString()+' records) because it is a broadly eligible, recurring benefit — nearly every qualifying employee claims it, unlike one-time or restricted benefits with narrower eligibility.');
 
   // Benefit type amount bar
   var typeAmtList = Object.entries(typeAmt).sort(function(a,b){return b[1]-a[1];});
@@ -4123,6 +4159,9 @@ function buildAnalytics() {
               y:{ticks:{color:tc,font:{size:10},callback:function(v){return v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v;}},grid:{color:gl},border:{color:'transparent'}}}
     }
   });
+  var typeAmtTop = typeAmtList[0]||['—',0];
+  var typeAmtTopAvg = typeCount[typeAmtTop[0]] ? (typeAmtTop[1]/typeCount[typeAmtTop[0]]) : 0;
+  setHTML('anTypeAmtBarWhy', '<span class="why-lbl">Why</span><b>'+typeAmtTop[0]+'</b> costs the most in total pesos ('+fmtA(typeAmtTop[1])+') even if it isn\'t the most frequent benefit — its per-availment value averages <b>'+fmtA(typeAmtTopAvg)+'</b>, far higher than smaller recurring benefits, so a handful of big-ticket transactions outweigh many small ones.');
 
   // ER/EE share pie
   destroyChartOn('anSharePie');
@@ -4134,6 +4173,9 @@ function buildAnalytics() {
       tooltip:{callbacks:{label:function(c){var v=c.raw;return c.label+': &#8369;'+(v>=1e6?(v/1e6).toFixed(2)+'M':v.toLocaleString(undefined,{maximumFractionDigits:0}));}}}}
     }
   });
+  var erShr = totalAmtAll>0 ? Math.round(totalER/totalAmtAll*100) : 0;
+  var eeShr = totalAmtAll>0 ? Math.round(totalEE/totalAmtAll*100) : 0;
+  setHTML('anSharePieWhy', '<span class="why-lbl">Why</span>The Employer shoulders <b>'+erShr+'%</b> and Employees <b>'+eeShr+'%</b> of the total because loan-type benefits (Chinabank, Car, Motorcycle) are structured as employee-repayable and pull the EE share up, while outright grants (Laptop, Bereavement, Medical) are fully employer-funded and pull the ER share down.');
 
   // Year trend line
   var yrEntries = Object.entries(yrMap).filter(function(x){return parseInt(x[0])>=2015;}).sort(function(a,b){return a[0].localeCompare(b[0]);});
@@ -4148,6 +4190,10 @@ function buildAnalytics() {
               y:{ticks:{color:tc,font:{size:10}},grid:{color:gl},border:{color:'transparent'}}}
     }
   });
+  var yrTop = Object.entries(yrMap).sort(function(a,b){return b[1]-a[1];})[0]||['—',0];
+  var yrLast2 = yrEntries.slice(-2);
+  var trendDir = yrLast2.length===2 ? (yrLast2[1][1]>yrLast2[0][1]?'rising':(yrLast2[1][1]<yrLast2[0][1]?'declining':'flat')) : null;
+  setHTML('anTrendLineWhy', '<span class="why-lbl">Why</span><b>'+yrTop[0]+'</b> recorded the most availments ('+yrTop[1]+') on record'+(trendDir?', and the most recent year-over-year movement is <b>'+trendDir+'</b> — '+(trendDir==='rising'?'likely driven by growing headcount and awareness of the benefit programs.':trendDir==='declining'?'worth checking whether it reflects fewer submissions, tighter eligibility, or a processing backlog rather than an actual drop in demand.':'availments have held roughly steady year to year.'):'.'));
 
   // ── Top affiliates by amount ───────────────────────────────────────────────
   var rankColors = ['#C9A84C','#8A9BB5','#D85A30','#5AABFF','#1D9E75','#7F77DD','#D4537E','#639922','#888780','#BA7517'];
@@ -4274,22 +4320,34 @@ function buildRanksAnalytics() {
 
   var legEl=document.getElementById('anRnkTypeLegend');
   if(legEl){ legEl.innerHTML=typeList.slice(0,8).map(function(pair,i){return '<div class="an-legend-item"><div class="an-legend-dot" style="background:'+typeColors[i]+'"></div><span class="an-legend-lbl">'+pair[0]+'</span><span class="an-legend-cnt">'+pair[1]+'</span><span class="an-legend-pct">'+Math.round(pair[1]/totalBenRecs*100)+'%</span></div>';}).join(''); }
+  var rnkTypeTop = typeList[0]||['—',0];
+  var rnkTypeTopPct = totalBenRecs>0 ? Math.round(rnkTypeTop[1]/totalBenRecs*100) : 0;
+  setHTML('anRnkTypePieWhy', '<span class="why-lbl">Why</span><b>'+rnkTypeTop[0]+'</b> is the most availed benefit among Ranks (<b>'+rnkTypeTopPct+'%</b> of '+totalBenRecs.toLocaleString()+' records), reflecting which benefit programs are actually open and accessible to rank-and-file employees versus those reserved for higher job grades.');
 
   // Amount bar
   var barEl=document.getElementById('anRnkTypeAmtBar');
   var typeAmtList=Object.entries(typeAmt).sort(function(a,b){return b[1]-a[1];});
   if(barEl){ destroyChartOn(barEl); new Chart(barEl.getContext('2d'),{type:'bar',data:{labels:typeAmtList.map(function(p){return p[0];}),datasets:[{data:typeAmtList.map(function(p){return p[1];}),backgroundColor:typeAmtList.map(function(p){return BEN_COLORS[p[0]]||'#888';}),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:10},maxRotation:35,minRotation:25},grid:{color:gl},border:{color:'transparent'}},y:{ticks:{color:tc,font:{size:10},callback:function(v){return v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v;}},grid:{color:gl},border:{color:'transparent'}}}}}); }
+  var rnkTypeAmtTop = typeAmtList[0]||['—',0];
+  setHTML('anRnkTypeAmtBarWhy', '<span class="why-lbl">Why</span><b>'+rnkTypeAmtTop[0]+'</b> is the highest-cost Ranks benefit at <b>'+fmt2(rnkTypeAmtTop[1])+'</b> total — big-ticket benefit types accumulate more pesos than frequently-claimed but low-value ones, even at Ranks headcount volumes.');
 
   // ER/EE share pie
   var unspec=Math.max(0,totalRnkAmt-totalRnkER-totalRnkEE);
   var shareEl=document.getElementById('anRnkSharePie');
   if(shareEl){ destroyChartOn(shareEl); new Chart(shareEl.getContext('2d'),{type:'doughnut',data:{labels:['ER','EE','Unspecified'],datasets:[{data:[totalRnkER,totalRnkEE,unspec],backgroundColor:['#D85A30','#D4537E','#888780'],borderWidth:1,borderColor:'rgba(0,0,0,.3)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:false}}}}); }
   setHTML('anRnkShareCards','<div class="an-stat-pill" style="margin-bottom:8px"><div class="an-stat-pill-label">Employer (ER)</div><div class="an-stat-pill-value" style="color:var(--orange)">'+fmt2(totalRnkER)+'</div></div><div class="an-stat-pill" style="margin-bottom:8px"><div class="an-stat-pill-label">Employee (EE)</div><div class="an-stat-pill-value" style="color:var(--pink)">'+fmt2(totalRnkEE)+'</div></div>');
+  var rnkErShr = totalRnkAmt>0 ? Math.round(totalRnkER/totalRnkAmt*100) : 0;
+  var rnkEeShr = totalRnkAmt>0 ? Math.round(totalRnkEE/totalRnkAmt*100) : 0;
+  setHTML('anRnkSharePieWhy', '<span class="why-lbl">Why</span>Ranks employees carry <b>'+rnkEeShr+'%</b> of their own benefit costs versus <b>'+rnkErShr+'%</b> shouldered by the employer — the same loan-vs-grant split seen in Mgmt &amp; Staff drives this, scaled to whichever benefit types Ranks actually avails.');
 
   // Trend line
   var yrEntries=Object.entries(yrMap).sort(function(a,b){return a[0].localeCompare(b[0]);});
   var trendEl=document.getElementById('anRnkTrendLine');
   if(trendEl){ destroyChartOn(trendEl); new Chart(trendEl.getContext('2d'),{type:'line',data:{labels:yrEntries.map(function(x){return x[0];}),datasets:[{label:'Availments',data:yrEntries.map(function(x){return x[1];}),borderColor:'#7F77DD',backgroundColor:'rgba(127,119,221,.1)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#7F77DD',fill:true,tension:.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{color:gl},border:{color:'transparent'}},y:{ticks:{color:tc,font:{size:10}},grid:{color:gl},border:{color:'transparent'}}}}}); }
+  var rnkYrTop = Object.entries(yrMap).sort(function(a,b){return b[1]-a[1];})[0]||['—',0];
+  var rnkYrLast2 = yrEntries.slice(-2);
+  var rnkTrendDir = rnkYrLast2.length===2 ? (rnkYrLast2[1][1]>rnkYrLast2[0][1]?'rising':(rnkYrLast2[1][1]<rnkYrLast2[0][1]?'declining':'flat')) : null;
+  setHTML('anRnkTrendLineWhy', '<span class="why-lbl">Why</span><b>'+rnkYrTop[0]+'</b> was the peak year for Ranks with '+rnkYrTop[1]+' availments'+(rnkTrendDir?', and the latest year-over-year trend is <b>'+rnkTrendDir+'</b>'+(rnkTrendDir==='rising'?' — awareness or eligibility for Ranks benefits appears to be improving.':rnkTrendDir==='declining'?' — worth checking whether Ranks employees are facing more friction claiming benefits than before.':' — availments are holding steady year to year.'):'.'));
 
   // Heatmap
   var hmEl=document.getElementById('anRnkHeatmap');
