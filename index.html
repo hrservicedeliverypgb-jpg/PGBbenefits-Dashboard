@@ -1623,6 +1623,10 @@ function buildChartSet(barId, pieId, trendId, legendId, ranksOnly, borderColor, 
   return [barInst,pieInst,trendInst];
 }
 
+function destroyChartOn(canvasIdOrEl) {
+  var existing = Chart.getChart(canvasIdOrEl);
+  if(existing) existing.destroy();
+}
 function buildCharts(){
   if(typeof Chart === 'undefined'){ setTimeout(buildCharts, 300); return; }
   var gl='rgba(0,0,0,.06)', tc='#8A9BB5';
@@ -3970,6 +3974,7 @@ function buildAnalytics() {
   var lvlLabels = lvlEntries.map(function(x){return x[0];});
   var lvlVals   = lvlEntries.map(function(x){return x[1];});
   var lvlColors = lvlLabels.map(function(l){return LVL_COL[l]||'#888';});
+  destroyChartOn('anLevelPie');
   new Chart(document.getElementById('anLevelPie').getContext('2d'),{
     type:'doughnut',
     data:{labels:lvlLabels,datasets:[{data:lvlVals,backgroundColor:lvlColors,borderWidth:1,borderColor:'rgba(0,0,0,.3)'}]},
@@ -3978,12 +3983,14 @@ function buildAnalytics() {
     }
   });
   var lvlLegEl = document.getElementById('anLevelLegend');
+  lvlLegEl.innerHTML = '';
   lvlEntries.forEach(function(pair,i){
     var pct=Math.round(pair[1]/totalEmp*100);
     lvlLegEl.innerHTML += '<div class="an-legend-item"><div class="an-legend-dot" style="background:'+lvlColors[i]+'"></div><span class="an-legend-lbl">'+pair[0]+'</span><span class="an-legend-cnt">'+pair[1].toLocaleString()+'</span><span class="an-legend-pct">'+pct+'%</span></div>';
   });
 
   // Gender pie
+  destroyChartOn('anGenderPie');
   new Chart(document.getElementById('anGenderPie').getContext('2d'),{
     type:'doughnut',
     data:{labels:['Male','Female','Other'],datasets:[{data:[gMap.M,gMap.F,gMap.Other],backgroundColor:['#5AABFF','#F5A0BE','#888780'],borderWidth:1,borderColor:'rgba(0,0,0,.3)'}]},
@@ -3997,6 +4004,7 @@ function buildAnalytics() {
   var statLabels = statEntries.map(function(x){return STAT_LBL[x[0]]||x[0];});
   var statVals   = statEntries.map(function(x){return x[1];});
   var statColors = statEntries.map(function(x){return STAT_COL[x[0]]||'#888';});
+  destroyChartOn('anStatusPie');
   new Chart(document.getElementById('anStatusPie').getContext('2d'),{
     type:'doughnut',
     data:{labels:statLabels,datasets:[{data:statVals,backgroundColor:statColors,borderWidth:1,borderColor:'rgba(0,0,0,.3)'}]},
@@ -4005,6 +4013,7 @@ function buildAnalytics() {
     }
   });
   var statLegEl = document.getElementById('anStatusLegend');
+  statLegEl.innerHTML = '';
   statEntries.forEach(function(pair,i){
     var pct=Math.round(pair[1]/totalEmp*100);
     statLegEl.innerHTML += '<div class="an-legend-item"><div class="an-legend-dot" style="background:'+statColors[i]+'"></div><span class="an-legend-lbl">'+(STAT_LBL[pair[0]]||pair[0])+'</span><span class="an-legend-cnt">'+pair[1].toLocaleString()+'</span><span class="an-legend-pct">'+pct+'%</span></div>';
@@ -4014,6 +4023,7 @@ function buildAnalytics() {
   var affList = Object.entries(affEmp).sort(function(a,b){return b[1]-a[1];});
   var affLabels = affList.map(function(x){return x[0];});
   var affVals   = affList.map(function(x){return x[1];});
+  destroyChartOn('anAffBar');
   new Chart(document.getElementById('anAffBar').getContext('2d'),{
     type:'bar',
     data:{labels:affLabels,datasets:[{data:affVals,backgroundColor:'#378ADD',borderRadius:4,borderSkipped:false}]},
@@ -4028,6 +4038,7 @@ function buildAnalytics() {
   var affBenList = Object.entries(affBenRec).sort(function(a,b){return b[1]-a[1];});
   var affBenLabels = affBenList.map(function(x){return x[0];});
   var affBenVals   = affBenList.map(function(x){return x[1];});
+  destroyChartOn('anAffBenBar');
   new Chart(document.getElementById('anAffBenBar').getContext('2d'),{
     type:'bar',
     data:{labels:affBenLabels,datasets:[{data:affBenVals,backgroundColor:'#C9A84C',borderRadius:4,borderSkipped:false}]},
@@ -4062,6 +4073,7 @@ function buildAnalytics() {
   var typeVals   = typeList.map(function(x){return x[1];});
   var typeColors = typeLabels.map(function(t){return BEN_COL[t]||'#888';});
   var totalBenRecs = typeVals.reduce(function(s,v){return s+v;},0);
+  destroyChartOn('anTypePie');
   new Chart(document.getElementById('anTypePie').getContext('2d'),{
     type:'doughnut',
     data:{labels:typeLabels,datasets:[{data:typeVals,backgroundColor:typeColors,borderWidth:1,borderColor:'rgba(0,0,0,.3)'}]},
@@ -4070,6 +4082,7 @@ function buildAnalytics() {
     }
   });
   var typeLegEl = document.getElementById('anTypeLegend');
+  typeLegEl.innerHTML = '';
   typeList.slice(0,8).forEach(function(pair,i){
     var pct=Math.round(pair[1]/totalBenRecs*100);
     typeLegEl.innerHTML += '<div class="an-legend-item"><div class="an-legend-dot" style="background:'+typeColors[i]+'"></div><span class="an-legend-lbl">'+pair[0]+'</span><span class="an-legend-cnt">'+pair[1]+'</span><span class="an-legend-pct">'+pct+'%</span></div>';
@@ -4080,6 +4093,7 @@ function buildAnalytics() {
   var typeAmtLabels = typeAmtList.map(function(x){return x[0];});
   var typeAmtVals   = typeAmtList.map(function(x){return x[1];});
   var typeAmtColors = typeAmtLabels.map(function(t){return BEN_COL[t]||'#888';});
+  destroyChartOn('anTypeAmtBar');
   new Chart(document.getElementById('anTypeAmtBar').getContext('2d'),{
     type:'bar',
     data:{labels:typeAmtLabels,datasets:[{data:typeAmtVals,backgroundColor:typeAmtColors,borderRadius:4,borderSkipped:false}]},
@@ -4092,6 +4106,7 @@ function buildAnalytics() {
   });
 
   // ER/EE share pie
+  destroyChartOn('anSharePie');
   new Chart(document.getElementById('anSharePie').getContext('2d'),{
     type:'doughnut',
     data:{labels:['Employer (ER)','Employee (EE)','Unspecified'],
@@ -4105,6 +4120,7 @@ function buildAnalytics() {
   var yrEntries = Object.entries(yrMap).filter(function(x){return parseInt(x[0])>=2015;}).sort(function(a,b){return a[0].localeCompare(b[0]);});
   var yrLabels = yrEntries.map(function(x){return x[0];});
   var yrVals   = yrEntries.map(function(x){return x[1];});
+  destroyChartOn('anTrendLine');
   new Chart(document.getElementById('anTrendLine').getContext('2d'),{
     type:'line',
     data:{labels:yrLabels,datasets:[{label:'Availments',data:yrVals,borderColor:'#C9A84C',backgroundColor:'rgba(201,168,76,.1)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#C9A84C',fill:true,tension:.35}]},
@@ -4235,7 +4251,7 @@ function buildRanksAnalytics() {
 
   // Type pie
   var pieEl=document.getElementById('anRnkTypePie');
-  if(pieEl){ new Chart(pieEl.getContext('2d'),{type:'doughnut',data:{labels:typeLabels,datasets:[{data:typeVals,backgroundColor:typeColors,borderWidth:1,borderColor:'rgba(0,0,0,.3)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw+' ('+Math.round(c.raw/totalBenRecs*100)+'%)';}}}}}});}
+  if(pieEl){ destroyChartOn(pieEl); new Chart(pieEl.getContext('2d'),{type:'doughnut',data:{labels:typeLabels,datasets:[{data:typeVals,backgroundColor:typeColors,borderWidth:1,borderColor:'rgba(0,0,0,.3)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw+' ('+Math.round(c.raw/totalBenRecs*100)+'%)';}}}}}});}
 
   var legEl=document.getElementById('anRnkTypeLegend');
   if(legEl){ legEl.innerHTML=typeList.slice(0,8).map(function(pair,i){return '<div class="an-legend-item"><div class="an-legend-dot" style="background:'+typeColors[i]+'"></div><span class="an-legend-lbl">'+pair[0]+'</span><span class="an-legend-cnt">'+pair[1]+'</span><span class="an-legend-pct">'+Math.round(pair[1]/totalBenRecs*100)+'%</span></div>';}).join(''); }
@@ -4243,18 +4259,18 @@ function buildRanksAnalytics() {
   // Amount bar
   var barEl=document.getElementById('anRnkTypeAmtBar');
   var typeAmtList=Object.entries(typeAmt).sort(function(a,b){return b[1]-a[1];});
-  if(barEl){ new Chart(barEl.getContext('2d'),{type:'bar',data:{labels:typeAmtList.map(function(p){return p[0];}),datasets:[{data:typeAmtList.map(function(p){return p[1];}),backgroundColor:typeAmtList.map(function(p){return BEN_COLORS[p[0]]||'#888';}),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:10},maxRotation:35,minRotation:25},grid:{color:gl},border:{color:'transparent'}},y:{ticks:{color:tc,font:{size:10},callback:function(v){return v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v;}},grid:{color:gl},border:{color:'transparent'}}}}}); }
+  if(barEl){ destroyChartOn(barEl); new Chart(barEl.getContext('2d'),{type:'bar',data:{labels:typeAmtList.map(function(p){return p[0];}),datasets:[{data:typeAmtList.map(function(p){return p[1];}),backgroundColor:typeAmtList.map(function(p){return BEN_COLORS[p[0]]||'#888';}),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:10},maxRotation:35,minRotation:25},grid:{color:gl},border:{color:'transparent'}},y:{ticks:{color:tc,font:{size:10},callback:function(v){return v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v;}},grid:{color:gl},border:{color:'transparent'}}}}}); }
 
   // ER/EE share pie
   var unspec=Math.max(0,totalRnkAmt-totalRnkER-totalRnkEE);
   var shareEl=document.getElementById('anRnkSharePie');
-  if(shareEl){ new Chart(shareEl.getContext('2d'),{type:'doughnut',data:{labels:['ER','EE','Unspecified'],datasets:[{data:[totalRnkER,totalRnkEE,unspec],backgroundColor:['#D85A30','#D4537E','#888780'],borderWidth:1,borderColor:'rgba(0,0,0,.3)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:false}}}}); }
+  if(shareEl){ destroyChartOn(shareEl); new Chart(shareEl.getContext('2d'),{type:'doughnut',data:{labels:['ER','EE','Unspecified'],datasets:[{data:[totalRnkER,totalRnkEE,unspec],backgroundColor:['#D85A30','#D4537E','#888780'],borderWidth:1,borderColor:'rgba(0,0,0,.3)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:false}}}}); }
   setHTML('anRnkShareCards','<div class="an-stat-pill" style="margin-bottom:8px"><div class="an-stat-pill-label">Employer (ER)</div><div class="an-stat-pill-value" style="color:var(--orange)">'+fmt2(totalRnkER)+'</div></div><div class="an-stat-pill" style="margin-bottom:8px"><div class="an-stat-pill-label">Employee (EE)</div><div class="an-stat-pill-value" style="color:var(--pink)">'+fmt2(totalRnkEE)+'</div></div>');
 
   // Trend line
   var yrEntries=Object.entries(yrMap).sort(function(a,b){return a[0].localeCompare(b[0]);});
   var trendEl=document.getElementById('anRnkTrendLine');
-  if(trendEl){ new Chart(trendEl.getContext('2d'),{type:'line',data:{labels:yrEntries.map(function(x){return x[0];}),datasets:[{label:'Availments',data:yrEntries.map(function(x){return x[1];}),borderColor:'#7F77DD',backgroundColor:'rgba(127,119,221,.1)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#7F77DD',fill:true,tension:.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{color:gl},border:{color:'transparent'}},y:{ticks:{color:tc,font:{size:10}},grid:{color:gl},border:{color:'transparent'}}}}}); }
+  if(trendEl){ destroyChartOn(trendEl); new Chart(trendEl.getContext('2d'),{type:'line',data:{labels:yrEntries.map(function(x){return x[0];}),datasets:[{label:'Availments',data:yrEntries.map(function(x){return x[1];}),borderColor:'#7F77DD',backgroundColor:'rgba(127,119,221,.1)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#7F77DD',fill:true,tension:.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{color:gl},border:{color:'transparent'}},y:{ticks:{color:tc,font:{size:10}},grid:{color:gl},border:{color:'transparent'}}}}}); }
 
   // Heatmap
   var hmEl=document.getElementById('anRnkHeatmap');
