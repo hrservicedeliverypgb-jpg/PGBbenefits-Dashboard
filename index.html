@@ -3555,7 +3555,24 @@ function catBen(t) {
   if(s==='eteeap') return 'ETEEAP';
   return s ? 'Other' : '';
 }
-function parseNum(v) { var n=parseFloat(norm(v)); return isNaN(n)?0:n; }
+function parseNum(v) {
+  // Handle values Excel may hand back as formatted strings (currency symbols, thousands commas)
+  var s = norm(v).replace(/[^0-9.\-]/g, '');
+  var n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+// Excel headers often carry stray leading/trailing spaces (e.g. " EE SHARE ") that break
+// exact-key lookups like row['EE SHARE']. This matches case/whitespace-insensitively instead.
+function getField(row, candidates) {
+  var keys = Object.keys(row);
+  for(var i=0; i<candidates.length; i++) {
+    var want = candidates[i].trim().toUpperCase();
+    for(var j=0; j<keys.length; j++) {
+      if(keys[j].trim().toUpperCase() === want) return row[keys[j]];
+    }
+  }
+  return undefined;
+}
 
 function applyNewPGBList(rows, fname) {
   setUploadStatus('pgb', 'processing', 'Processing '+rows.length+' rows...');
@@ -3571,25 +3588,25 @@ function applyNewPGBList(rows, fname) {
       console.log('[PGB Upload] First row sample:', JSON.stringify(rows[0]).substring(0,200));
     }
     rows.forEach(function(r) {
-      var id = normId(r['IDNO'] || r['idno'] || r['ID'] || '');
+      var id = normId(getField(r, ['IDNO','idno','ID']) || '');
       if(!id) return;
       // Skip instruction/note rows (IDNO contains spaces, ★, or is longer than 20 chars)
       if(id.indexOf(' ') !== -1 || id.indexOf('★') !== -1 || id.length > 20) return;
       // Skip rows where COMPLETE NAME looks like a header/note
-      var nameVal = norm(r['COMPLETE NAME'] || r['Name'] || r['EMPLOYEE NAME'] || '');
+      var nameVal = norm(getField(r, ['COMPLETE NAME','Name','EMPLOYEE NAME']) || '');
       if(nameVal.toLowerCase().indexOf('required') !== -1 || nameVal.toLowerCase().indexOf('last, first') !== -1) return;
       var existing = compMap[id];
       newEmp.push({
         id: id,
-        name: norm(r['COMPLETE NAME'] || r['Name'] || r['EMPLOYEE NAME'] || ''),
-        affiliate: norm(r['AFFILIATE'] || r['Affiliate'] || ''),
-        pos: norm(r['POSITION'] || r['Position'] || '').substring(0,60),
-        dept: norm(r['DEPARTMENT'] || r['Department'] || '').substring(0,40),
-        gender: norm(r['GENDER'] || r['Gender'] || '').substring(0,1),
-        status: normStatus(r['EMPLOYMENT STATUS-JOB TYPE'] || r['STATUS'] || r['Employment Status'] || ''),
-        level: norm(r['LEVEL'] || r['Level'] || ''),
-        pos_level: norm(r['POSITION LEVEL'] || r['Position Level'] || ''),
-        hire: fmtDate(r['DATE HIRE'] || r['Date Hire'] || r['HIRE DATE'] || ''),
+        name: norm(getField(r, ['COMPLETE NAME','Name','EMPLOYEE NAME']) || ''),
+        affiliate: norm(getField(r, ['AFFILIATE','Affiliate']) || ''),
+        pos: norm(getField(r, ['POSITION','Position']) || '').substring(0,60),
+        dept: norm(getField(r, ['DEPARTMENT','Department']) || '').substring(0,40),
+        gender: norm(getField(r, ['GENDER','Gender']) || '').substring(0,1),
+        status: normStatus(getField(r, ['EMPLOYMENT STATUS-JOB TYPE','STATUS','Employment Status']) || ''),
+        level: norm(getField(r, ['LEVEL','Level']) || ''),
+        pos_level: norm(getField(r, ['POSITION LEVEL','Position Level']) || ''),
+        hire: fmtDate(getField(r, ['DATE HIRE','Date Hire','HIRE DATE']) || ''),
         // Preserve benefits and separation status from existing
         bens: existing ? (existing.bens||[]) : [],
         total_ben: existing ? (existing.total_ben||0) : 0,
@@ -3663,26 +3680,28 @@ function applyNewBenefits(rows, fname) {
       console.log('[Ben Upload] First row sample:', JSON.stringify(rows[0]).substring(0,200));
     }
     rows.forEach(function(r) {
-      var rawId = r['idno'] || r['IDNO'] || r['ID'] || '';
+      var rawId = getField(r, ['idno','IDNO','ID']) || '';
       var id = normId(rawId);
       // Skip instruction/note rows
       if(!id) return;
       if(String(rawId).indexOf('★') !== -1 || String(rawId).indexOf('REQUIRED') !== -1) return;
       if(id.indexOf(' ') !== -1 || id.length > 20) return;
       if(!id) return;
-      var co = norm(r['COMPANY NAME'] || r['AFFILIATE'] || r['Company'] || '');
+      var co = norm(getField(r, ['COMPANY NAME','AFFILIATE','Company']) || '');
       co = coMap[co] || co;
-      var benCat = catBen(r['TYPE OF BENEFITS'] || r['BENEFIT TYPE'] || r['Benefit'] || '');
+      var benCat = catBen(getField(r, ['TYPE OF BENEFITS','BENEFIT TYPE','Benefit']) || '');
       if(!benCat) return;
-      var yr = parseInt(norm(r['YEAR ACQUIRED'] || r['Year'] || ''))||null;
-      var ee = parseNum(r['EE SHARE'] || r['EE'] || 0);
-      var er = parseNum(r['ER SHARE'] || r['ER'] || 0);
-      var tt = parseNum(r['TOTAL AMOUNT '] || r['TOTAL AMOUNT'] || r['Total'] || 0);
-      var da = fmtDate(r['DATE APPROVED'] || r['Date Approved'] || '');
-      var dr = fmtDate(r['DATE RELEASED'] || r['Date Released'] || '');
+      var yr = parseInt(norm(getField(r, ['YEAR ACQUIRED','Year']) || ''))||null;
+      var ee = parseNum(getField(r, ['EE SHARE','EE']) || 0);
+      var er = parseNum(getField(r, ['ER SHARE','ER']) || 0);
+      // Total is always EE + ER — never read from the file, since Total is often a formula
+      // cell whose calculated value isn't reliably readable from the spreadsheet.
+      var tt = ee + er;
+      var da = fmtDate(getField(r, ['DATE APPROVED','Date Approved']) || '');
+      var dr = fmtDate(getField(r, ['DATE RELEASED','Date Released']) || '');
       if(da.startsWith('1905')||da.startsWith('1934')) da='';
       if(dr.startsWith('1905')||dr.startsWith('1934')) dr='';
-      var rmk = norm(r['REMARKS'] || r['Remarks'] || '').substring(0,100);
+      var rmk = norm(getField(r, ['REMARKS','Remarks']) || '').substring(0,100);
 
       var benEntry = {ben:benCat,yr:yr,ee:ee,er:er,tt:tt,co:co,da:da,dr:dr,rmk:rmk,_allocIdx:idx};
 
